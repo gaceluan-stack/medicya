@@ -714,7 +714,11 @@
                 }
                 loadData();
             } catch (err) {
-         async function loadData() {
+                alert("Error al ejecutar cron");
+            }
+        }
+
+        async function loadData() {
             // 1. Cargar atribución publicitaria
             try {
                 const attResponse = await fetch('/api/admin/atribucion', {
