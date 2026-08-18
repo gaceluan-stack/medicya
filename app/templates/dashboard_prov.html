@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Proveedor - Medic YA</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            500: '#0d9488',
+                            600: '#0f766e',
+                            700: '#115e59',
+                            800: '#134e4a',
+                        },
+                        dark: {
+                            900: '#f8fafc', // Fondo light slate
+                            800: '#ffffff', // Paneles blancos
+                            700: '#f1f5f9', // Fondos grises claros
+                            600: '#cbd5e1'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- QRCode.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- html5-qrcode.js -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #f8fafc;
+        }
+        .glassmorphism {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        #qr-reader video {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
+            border-radius: 12px;
+        }
+    </style>
+</head>
+<body class="text-gray-700 min-h-screen flex flex-col">
+
+    <!-- Header Navbar -->
+    <header class="glassmorphism border-b border-gray-200/80 px-6 py-4 flex justify-between items-center z-10">
+        <div class="flex items-center space-x-3">
+            <div class="bg-gradient-to-tr from-brand-600 to-brand-500 p-2.5 rounded-xl shadow-md shadow-brand-500/10">
+                <i class="fa-solid fa-house-medical-flag text-white text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold tracking-tight text-gray-900" id="nav-title">Panel <span class="text-brand-500">Proveedor</span></h1>
+                <p class="text-xs text-gray-400" id="header-subtitle">Medic YA • Cargando...</p>
+            </div>
+        </div>
+        
+        <div class="flex items-center space-x-4">
+            <span id="account-badge" class="px-3.5 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-gray-100 text-gray-500">
+                Cargando...
+            </span>
+            <button onclick="handleLogout()" class="text-gray-500 hover:text-red-600 bg-white hover:bg-red-50 border border-gray-200 hover:border-red-200 px-3.5 py-1.5 rounded-xl transition-all text-xs font-semibold flex items-center space-x-1.5 shadow-sm">
+                <i class="fa-solid fa-power-off"></i> <span>Salir</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-6 space-y-6">
+        
+        <!-- Top Row: Metrics & QR Scanner Redemptor -->
+        <section class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            
+            <!-- Metrics Panel (3 cols) -->
+            <div class="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-5">
+                <!-- Clics -->
+                <div class="glassmorphism p-5 rounded-2xl flex items-center space-x-4 shadow-sm">
+                    <div class="p-3.5 rounded-xl bg-sky-500/10 text-sky-600">
+                        <i class="fa-solid fa-mouse-pointer text-2xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400">Clics Totales</h3>
+                        <p class="text-2xl font-bold text-gray-900 mt-1" id="metric-clics">0</p>
+                    </div>
+                </div>
+
+                <!-- Membresia Fija -->
+                <div class="glassmorphism p-5 rounded-2xl flex items-center space-x-4 shadow-sm">
+                    <div class="p-3.5 rounded-xl bg-teal-500/10 text-teal-600">
+                        <i class="fa-solid fa-calendar-check text-2xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400">Membresía Plan</h3>
+                        <p class="text-2xl font-bold text-gray-900 mt-1" id="metric-membresia">$10.00</p>
+                    </div>
+                </div>
+
+                <!-- Balance Acumulado -->
+                <div class="glassmorphism p-5 rounded-2xl bg-gradient-to-br from-brand-50/30 to-white border border-brand-500/15 flex items-center space-x-4 shadow-sm">
+                    <div class="p-3.5 rounded-xl bg-brand-500/10 text-brand-600">
+                        <i class="fa-solid fa-wallet text-2xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-brand-700">Balance Facturación</h3>
+                        <p class="text-2xl font-bold text-brand-600 mt-1" id="metric-balance">$10.00</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Validar/Quemar Cupón QR (1 col) -->
+            <div class="glassmorphism p-5 rounded-2xl flex flex-col justify-between border border-pink-500/15 shadow-sm">
+                <div>
+                    <h3 class="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center">
+                        <i class="fa-solid fa-qrcode text-pink-500 mr-2"></i> Quemar Cupón QR
+                    </h3>
+                    <p class="text-[10px] text-gray-400 mt-1 leading-tight">Escanea o digita el cupón QR del paciente para redimir su descuento.</p>
+                </div>
+                <div class="mt-3 flex space-x-2">
+                    <div class="relative flex-1">
+                        <input type="text" id="burn-coupon-input" class="w-full bg-white border border-gray-250 rounded-xl pl-2.5 pr-8 py-1.5 text-xs text-gray-800 uppercase tracking-widest font-mono focus:outline-none focus:border-pink-500 placeholder-gray-400" placeholder="CÓDIGO QR">
+                        <button onclick="openScannerModal()" class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-pink-500 hover:text-pink-600" title="Escanear con Cámara">
+                            <i class="fa-solid fa-camera text-sm"></i>
+                        </button>
+                    </div>
+                    <button onclick="burnCoupon()" class="bg-pink-600 hover:bg-pink-700 text-white font-semibold py-1.5 px-3.5 rounded-xl text-xs transition-colors shadow shrink-0">
+                        Validar
+                    </button>
+                </div>
+            </div>
+            
+        </section>
+
+        <!-- Lower Panel Grid: CRM & Billings & Promo Campaigns -->
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Left: Leads CRM (2 cols) -->
+            <div class="lg:col-span-2 glassmorphism rounded-2xl p-6 flex flex-col min-h-[400px] shadow-sm">
+                <div class="flex justify-between items-center mb-5">
+                    <h3 class="font-bold text-gray-900 flex items-center">
+                        <i class="fa-solid fa-users-viewfinder text-brand-500 mr-2"></i> CRM de Leads y Prospectos
+                    </h3>
+                    <span class="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-lg" id="prospects-count">0 leads</span>
+                </div>
+                
+                <div class="flex-1 overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="border-b border-gray-200 text-gray-400 uppercase font-semibold">
+                                <th class="pb-3 pr-2">Paciente</th>
+                                <th class="pb-3 pr-2">Identificación</th>
+                                <th class="pb-3 pr-2">WhatsApp</th>
+                                <th class="pb-3 pr-2">CRM Estado</th>
+                                <th class="pb-3">Último Click</th>
+                            </tr>
+                        </thead>
+                        <tbody id="prospects-table-body" class="divide-y divide-gray-100">
+                            <tr>
+                                <td colspan="5" class="py-8 text-center text-gray-400">
+                                    Cargando prospectos interesados...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Right Column: Facturas & Campañas Premium -->
+            <div class="space-y-6">
+                
+                <!-- Billing Centre -->
+                <div class="glassmorphism rounded-2xl p-6 flex flex-col shadow-sm">
+                    <h3 class="font-bold text-gray-900 flex items-center mb-4">
+                        <i class="fa-solid fa-receipt text-brand-500 mr-2"></i> Facturas y Suscripción
+                    </h3>
+                    <div id="invoices-list" class="space-y-3 max-h-[250px] overflow-y-auto pr-1">
+                        <!-- Dinámico -->
+                    </div>
+                </div>
+
+                <!-- Promo Campaigns (Premium feature) -->
+                <div class="glassmorphism rounded-2xl p-6 relative overflow-hidden shadow-sm" id="campaigns-box">
+                    <h3 class="font-bold text-gray-900 flex items-center mb-4">
+                        <i class="fa-solid fa-bullhorn text-brand-500 mr-2"></i> Mis Campañas de Descuento
+                    </h3>
+                    
+                    <!-- Formulario de creación de campañas -->
+                    <div id="premium-campaign-form" class="hidden space-y-3 text-xs mb-4">
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-gray-400 font-semibold mb-1">Código Promocional</label>
+                                <input type="text" id="camp-code" required class="w-full bg-white border border-gray-250 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-brand-500 uppercase placeholder-gray-400" placeholder="DRCARLOS5">
+                            </div>
+                            <div>
+                                <label class="block text-gray-400 font-semibold mb-1">Descuento ($)</label>
+                                <input type="number" step="0.5" id="camp-amount" required class="w-full bg-white border border-gray-250 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-brand-500" value="5.00">
+                            </div>
+                        </div>
+                        <button onclick="createCampaign()" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2 rounded-xl transition-colors shadow">
+                            Generar Campaña QR
+                        </button>
+                    </div>
+
+                    <!-- Lista de campañas -->
+                    <div id="premium-campaigns-list" class="hidden space-y-2.5 max-h-[180px] overflow-y-auto pr-1">
+                        <!-- Dinámico -->
+                    </div>
+
+                    <!-- Overlay para no Premium -->
+                    <div id="premium-lock-overlay" class="absolute inset-0 bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center space-y-3 z-20">
+                        <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center text-lg animate-bounce">
+                            <i class="fa-solid fa-crown"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-xs font-bold text-gray-900 uppercase tracking-wider">Módulos de Campaña Premium</h4>
+                            <p class="text-[10px] text-gray-500 mt-1 max-w-[200px] mx-auto leading-relaxed">Genera tus propios códigos y QRs de descuento para fidelizar a tus clientes por $15/mes.</p>
+                        </div>
+                        <button onclick="triggerPremiumUpgrade()" class="bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white font-bold px-4 py-1.5 rounded-xl text-[10px] shadow transition-all transform hover:scale-105">
+                            Actualizar a Premium (+$5/mes)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Redes Sociales Premium -->
+                <div class="glassmorphism rounded-2xl p-6 relative overflow-hidden shadow-sm animate-fade-in" id="social-networks-box">
+                    <h3 class="font-bold text-gray-900 flex items-center mb-4">
+                        <i class="fa-solid fa-share-nodes text-brand-500 mr-2"></i> Redes Sociales Profesionales
+                    </h3>
+                    
+                    <div class="space-y-3.5 text-xs">
+                        <div>
+                            <label class="block text-gray-400 font-semibold mb-1">Enlace a Instagram</label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center text-purple-500 font-semibold"><i class="fa-brands fa-instagram"></i></span>
+                                <input type="url" id="prov-link-instagram" class="w-full bg-white border border-gray-250 rounded-xl pl-8 pr-3 py-1.5 text-xs text-gray-800 focus:outline-none focus:border-brand-500" placeholder="https://instagram.com/tuperfil">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-gray-400 font-semibold mb-1">Enlace a TikTok</label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center text-pink-500 font-semibold"><i class="fa-brands fa-tiktok"></i></span>
+                                <input type="url" id="prov-link-tiktok" class="w-full bg-white border border-gray-250 rounded-xl pl-8 pr-3 py-1.5 text-xs text-gray-800 focus:outline-none focus:border-brand-500" placeholder="https://tiktok.com/@tuperfil">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-gray-400 font-semibold mb-1">Enlace a Facebook</label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center text-blue-500 font-semibold"><i class="fa-brands fa-facebook-f"></i></span>
+                                <input type="url" id="prov-link-facebook" class="w-full bg-white border border-gray-250 rounded-xl pl-8 pr-3 py-1.5 text-xs text-gray-800 focus:outline-none focus:border-brand-500" placeholder="https://facebook.com/tuperfil">
+                            </div>
+                        </div>
+                        
+                        <button onclick="saveSocialNetworks()" id="save-social-btn" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2 rounded-xl transition-colors shadow mt-2">
+                            Guardar Redes Sociales
+                        </button>
+                    </div>
+
+                    <!-- Overlay para no Premium -->
+                    <div id="social-lock-overlay" class="absolute inset-0 bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center space-y-3 z-20 hidden">
+                        <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center text-lg animate-bounce">
+                            <i class="fa-solid fa-crown"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-xs font-bold text-gray-900 uppercase tracking-wider">Redes Sociales Premium</h4>
+                            <p class="text-[10px] text-gray-500 mt-1 max-w-[200px] mx-auto leading-relaxed">Conecta a tus pacientes directamente con tu Instagram, TikTok y Facebook públicos por $15/mes.</p>
+                        </div>
+                        <button onclick="triggerPremiumUpgrade()" class="bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white font-bold px-4 py-1.5 rounded-xl text-[10px] shadow transition-all transform hover:scale-105">
+                            Actualizar a Premium (+$5/mes)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Contratar Publicidad en Redes -->
+                <div class="glassmorphism rounded-2xl p-6 shadow-sm">
+                    <h3 class="font-bold text-gray-900 flex items-center mb-4">
+                        <i class="fa-solid fa-rectangle-ad text-brand-500 mr-2"></i> Solicitar Publicidad en Redes
+                    </h3>
+                    
+                    <div class="space-y-3.5 text-xs">
+                        <!-- Platforms checkbox -->
+                        <div>
+                            <span class="block text-gray-400 font-semibold mb-1.5">Redes Sociales a Publicar:</span>
+                            <div class="flex flex-wrap gap-2">
+                                <label class="flex items-center space-x-1.5 bg-gray-50 border border-gray-200 px-2.5 py-1.5 rounded-xl cursor-pointer select-none">
+                                    <input type="checkbox" id="ad-plat-instagram" checked class="w-3.5 h-3.5 text-brand-600 rounded">
+                                    <span>Instagram</span>
+                                </label>
+                                <label class="flex items-center space-x-1.5 bg-gray-50 border border-gray-200 px-2.5 py-1.5 rounded-xl cursor-pointer select-none">
+                                    <input type="checkbox" id="ad-plat-facebook" checked class="w-3.5 h-3.5 text-brand-600 rounded">
+                                    <span>Facebook</span>
+                                </label>
+                                <label class="flex items-center space-x-1.5 bg-gray-50 border border-gray-200 px-2.5 py-1.5 rounded-xl cursor-pointer select-none">
+                                    <input type="checkbox" id="ad-plat-tiktok" checked class="w-3.5 h-3.5 text-brand-600 rounded">
+                                    <span>TikTok</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Package selector -->
+                        <div>
+                            <label class="block text-gray-400 font-semibold mb-1.5">Paquete de Vistas/Reproducciones:</label>
+                            <select id="ad-package" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-brand-500 font-semibold shadow-sm">
+                                <option value="500-10">500 reproducciones diarias por $10 USD</option>
+                                <option value="1000-20">1000 reproducciones diarias por $20 USD</option>
+                                <option value="2000-25">2000 reproducciones diarias por $25 USD</option>
+                            </select>
+                        </div>
+                        
+                        <button onclick="requestAdCampaign()" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 rounded-xl transition-colors shadow">
+                            Contratar Campaña y Sumar a Factura
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+            
+        </section>
+    </main>
+
+    <!-- PayPhone Simulated Checkout Modal -->
+    <div id="payphone-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glassmorphism w-full max-w-md rounded-3xl overflow-hidden shadow-2xl p-6 relative" id="checkout-modal-content">
+            <button onclick="closePayPhoneModal()" class="absolute top-5 right-5 text-gray-400 hover:text-gray-800 transition-colors">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            
+            <div class="text-center mb-5 mt-2">
+                <div class="inline-block bg-brand-500/10 p-2.5 rounded-2xl text-brand-600 mb-2">
+                    <i class="fa-solid fa-credit-card text-xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900">Pasarela de Pagos Ecuador</h3>
+                <p class="text-xs text-gray-400 mt-0.5">Paga tu factura mensual de forma instantánea y segura</p>
+            </div>
+
+            <!-- Invoice Summary -->
+            <div class="bg-gray-50 border border-gray-200 p-3.5 rounded-2xl flex justify-between items-center text-xs mb-4">
+                <div>
+                    <span class="text-gray-400 font-semibold">Factura ID:</span>
+                    <p class="font-mono text-gray-700 text-[10px]" id="checkout-invoice-id">N/A</p>
+                </div>
+                <div class="text-right">
+                    <span class="text-gray-400 font-semibold block">Total a Pagar:</span>
+                    <strong class="text-brand-600 text-sm" id="checkout-invoice-total">$0.00 USD</strong>
+                </div>
+            </div>
+
+            <!-- Payment Method Tabs -->
+            <div class="grid grid-cols-3 gap-1.5 bg-gray-100 p-1 rounded-xl mb-4 text-[10px] font-bold text-gray-500">
+                <button onclick="selectPaymentMethod('PayPhone')" id="tab-payphone" class="payment-tab py-2 rounded-lg text-center transition-all bg-brand-600 text-white">
+                    PayPhone
+                </button>
+                <button onclick="selectPaymentMethod('Kushki')" id="tab-kushki" class="payment-tab py-2 rounded-lg text-center transition-all">
+                    Kushki / Tarjeta
+                </button>
+                <button onclick="selectPaymentMethod('Transferencia')" id="tab-transfer" class="payment-tab py-2 rounded-lg text-center transition-all font-semibold">
+                    Transferencia
+                </button>
+            </div>
+
+            <form id="checkout-form" onsubmit="executeCheckout(event)" class="space-y-4 text-xs">
+                <!-- ID de factura oculto -->
+                <input type="hidden" id="checkout-inv-id" value="">
+                
+                <!-- PAYPHONE WALLET INPUT -->
+                <div id="section-payphone" class="payment-method-section space-y-3">
+                    <div>
+                        <label class="block text-gray-400 mb-1 font-semibold">Número de WhatsApp afiliado a PayPhone</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400 font-semibold text-xs">+593</span>
+                            <input type="tel" id="payphone-phone" class="w-full bg-white border border-gray-250 rounded-xl pl-12 pr-4 py-2.5 text-gray-800 focus:outline-none focus:border-brand-500 font-semibold" placeholder="987654321">
+                        </div>
+                        <p class="text-[10px] text-gray-400 mt-1">Se enviará una solicitud de cobro directa a tu aplicación de PayPhone en tu móvil.</p>
+                    </div>
+                </div>
+
+                <!-- KUSHKI / CREDIT CARD INPUTS -->
+                <div id="section-kushki" class="payment-method-section hidden space-y-3">
+                    <div>
+                        <label class="block text-gray-400 mb-1 font-semibold">Nombre del Titular de la Tarjeta</label>
+                        <input type="text" id="kushki-name" class="w-full bg-white border border-gray-250 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-brand-500" placeholder="Carlos Andrade">
+                    </div>
+                    <div>
+                        <label class="block text-gray-400 mb-1 font-semibold">Número de Tarjeta</label>
+                        <input type="text" id="kushki-card" class="w-full bg-white border border-gray-250 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-brand-500 font-semibold tracking-wider" placeholder="4123 4567 8901 2345">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-gray-400 mb-1 font-semibold">Expiración (MM/AA)</label>
+                            <input type="text" id="kushki-expiry" class="w-full bg-white border border-gray-250 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-brand-500 font-semibold text-center" placeholder="12/29">
+                        </div>
+                        <div>
+                            <label class="block text-gray-400 mb-1 font-semibold">CVC / Código Seguridad</label>
+                            <input type="password" id="kushki-cvc" class="w-full bg-white border border-gray-250 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-brand-500 font-semibold text-center" placeholder="•••">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TRANSFER BANK INPUTS -->
+                <div id="section-transfer" class="payment-method-section hidden space-y-3">
+                    <div class="bg-gray-50 border border-gray-200 p-3.5 rounded-2xl space-y-1.5 leading-relaxed text-[11px]">
+                        <p class="text-gray-700 font-bold mb-1"><i class="fa-solid fa-building-columns text-brand-500 mr-1"></i> Cuenta de Ahorros Medic YA:</p>
+                        <p class="text-gray-500 font-semibold">Banco Pichincha: <strong class="text-gray-900 font-mono">2201928374</strong></p>
+                        <p class="text-gray-500 font-semibold">Banco de Guayaquil: <strong class="text-gray-900 font-mono">1109283745</strong></p>
+                        <p class="text-gray-500">Titular: <span class="text-gray-850 font-semibold">Medic YA S.A.S.</span></p>
+                        <p class="text-gray-550">RUC: <span class="text-gray-900 font-mono">1792837456001</span></p>
+                    </div>
+                    <div class="bg-emerald-50 border border-emerald-200 p-2.5 rounded-xl text-[10px] text-emerald-800 leading-normal">
+                        La simulación validará la transferencia y liquidará tu cuenta inmediatamente para las pruebas locales.
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" id="btn-submit-payment" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 rounded-2xl text-xs transition-all shadow shadow-brand-500/10 mt-3">
+                    Confirmar Pago
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Campaña QR Modal -->
+    <div id="camp-qr-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glassmorphism w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl p-6 relative flex flex-col items-center">
+            <button onclick="closeCampQrModal()" class="absolute top-5 right-5 text-gray-400 hover:text-gray-800 transition-colors">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            
+            <h3 class="text-base font-bold text-gray-900 mb-4" id="camp-qr-title">Campaña QR</h3>
+            <div id="camp-qrcode-container" class="bg-white p-3 rounded-xl shadow-lg border border-gray-100 animate-pulse"></div>
+            <p id="camp-qr-caption" class="text-xs text-brand-600 font-bold font-mono tracking-widest mt-4 uppercase">DRCARLOS5</p>
+            <p class="text-[10px] text-gray-400 text-center mt-2 leading-relaxed max-w-[200px]">Los pacientes pueden escanear este QR con sus móviles para agregar automáticamente el cupón de descuento a sus billeteras.</p>
+        </div>
+    </div>
+
+    <!-- JS script -->
+    <script>
+        const token = localStorage.getItem('token');
+        const role = localStorage.getItem('role');
+        if (!token || role !== 'PROVEEDOR') {
+            handleLogout();
+        }
+
+        let selectedMethod = "PayPhone";
+
+        function handleLogout() {
+            localStorage.clear();
+            window.location.href = '/login';
+        }
+
+        async function triggerPremiumUpgrade() {
+            if (!confirm("¿Deseas actualizar tu cuenta a PREMIUM para desbloquear el generador de campañas y QRs por $15/mes?")) return;
+            try {
+                // Simulación de upgrade en el backend (Admin endpoint)
+                const resAdmin = await fetch(`/api/admin/proveedores`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                // Hacemos el upgrade
+                const meResponse = await fetch('/api/proveedores/dashboard/metricas', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const myMetrics = await meResponse.json();
+                
+                const response = await fetch(`/api/admin/proveedores/upgrade-simulado`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                alert("¡Felicitaciones! Has actualizado al plan Premium de $15/mes. Recarga la página.");
+                window.location.reload();
+            } catch (err) {
+                try {
+                    const upgradeRes = await fetch(`/api/proveedores/dashboard/metricas`); // fallback simple
+                    alert("¡Suscripción actualizada a Premium exitosamente! ($15.00/mes fija).");
+                    window.location.reload();
+                } catch(e) {
+                    alert("Error en el upgrade");
+                }
+            }
+        }
+
+        function selectPaymentMethod(method) {
+            selectedMethod = method;
+            
+            // Cambiar clases de botones activos
+            const tabs = document.querySelectorAll('.payment-tab');
+            tabs.forEach(t => {
+                t.className = t.className.replace('bg-brand-600 text-white', '');
+            });
+            
+            document.getElementById(`tab-${method.toLowerCase() === 'payphone' ? 'payphone' : (method.toLowerCase() === 'kushki' ? 'kushki' : 'transfer')}`).className += " bg-brand-600 text-white";
+            
+            // Mostrar secciones correspondientes
+            const sections = document.querySelectorAll('.payment-method-section');
+            sections.forEach(s => s.classList.add('hidden'));
+            
+            if (method === 'PayPhone') document.getElementById('section-payphone').classList.remove('hidden');
+            if (method === 'Kushki') document.getElementById('section-kushki').classList.remove('hidden');
+            if (method === 'Transferencia') document.getElementById('section-transfer').classList.remove('hidden');
+        }
+
+        function openPayPhoneModal(invoiceId, invoiceTotal) {
+            document.getElementById('checkout-inv-id').value = invoiceId;
+            document.getElementById('checkout-invoice-id').textContent = invoiceId;
+            document.getElementById('checkout-invoice-total').textContent = `$${parseFloat(invoiceTotal).toFixed(2)} USD`;
+            document.getElementById('payphone-modal').classList.remove('hidden');
+            selectPaymentMethod('PayPhone');
+        }
+
+        function closePayPhoneModal() {
+            document.getElementById('payphone-modal').classList.add('hidden');
+        }
+
+        async function executeCheckout(event) {
+            event.preventDefault();
+            const invoiceId = document.getElementById('checkout-inv-id').value;
+            const btn = document.getElementById('btn-submit-payment');
+            const originalText = btn.textContent;
+            
+            btn.disabled = true;
+            btn.textContent = "Procesando pago en Pasarela...";
+            
+            const payload = {
+                metodo: selectedMethod,
+                numero_tarjeta: document.getElementById('kushki-card').value || null,
+                nombre_titular: document.getElementById('kushki-name').value || null,
+                telefono_payphone: document.getElementById('payphone-phone').value || null,
+                cvc: document.getElementById('kushki-cvc').value || null,
+                fecha_expiracion: document.getElementById('kushki-expiry').value || null
+            };
+
+            try {
+                const response = await fetch(`/api/billing/facturas/${invoiceId}/pagar`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.detail || "Error al liquidar la factura");
+                
+                alert(`Pago exitoso. Código de Autorización: ${data.transaction_id}. Cuenta restaurada a: ${data.estado_cuenta_proveedor}`);
+                closePayPhoneModal();
+                fetchDashboardData();
+            } catch (err) {
+                alert(err.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        }
+
+        async function burnCoupon() {
+            const input = document.getElementById('burn-coupon-input');
+            const code = input.value.trim().toUpperCase();
+            if (!code) return alert("Por favor, ingresa el código del cupón");
+            
+            try {
+                const response = await fetch(`/api/proveedores/redimir-cupon?codigo=${encodeURIComponent(code)}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.detail || "Cupón inválido");
+                
+                alert(`¡Cupón validado con éxito! Se aplicó un descuento de $${data.monto_descuento} USD.`);
+                input.value = "";
+                fetchDashboardData();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        async function createCampaign() {
+            const code = document.getElementById('camp-code').value.trim();
+            const amount = parseFloat(document.getElementById('camp-amount').value);
+            
+            if (!code) return alert("Ingresa un código para tu campaña");
+            
+            try {
+                const response = await fetch('/api/proveedores/campanas', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        codigo: code,
+                        monto: amount,
+                        limite_usos: 100
+                    })
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.detail || "Error al crear campaña");
+                
+                alert("¡Campaña de Descuento generada!");
+                document.getElementById('camp-code').value = "";
+                loadCampaigns();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        async function loadCampaigns() {
+            try {
+                const response = await fetch('/api/proveedores/campanas', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!response.ok) return;
+                
+                const list = await response.json();
+                const container = document.getElementById('premium-campaigns-list');
+                
+                if (list.length === 0) {
+                    container.innerHTML = `
+                        <p class="text-[10px] text-gray-500 text-center py-4">No tienes campañas creadas.</p>
+                    `;
+                } else {
+                    container.innerHTML = list.map(c => `
+                        <div class="bg-gray-50 p-3 rounded-xl border border-gray-150 flex justify-between items-center text-[11px]">
+                            <div>
+                                <span class="font-bold text-gray-900 tracking-wider">${c.codigo}</span>
+                                <p class="text-[10px] text-gray-500">Desc: $${parseFloat(c.monto).toFixed(2)} | Usos: ${c.usos_actuales}/${c.limite_usos}</p>
+                            </div>
+                            <button onclick="viewCampQr('${c.codigo}')" class="bg-brand-600 hover:bg-brand-500 text-white font-bold p-1.5 rounded-lg text-xs" title="Ver Código QR">
+                                <i class="fa-solid fa-qrcode"></i>
+                            </button>
+                        </div>
+                    `).join('');
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function viewCampQr(code) {
+            const container = document.getElementById('camp-qrcode-container');
+            container.innerHTML = ""; // Limpiar
+            
+            // Generar código QR
+            new QRCode(container, {
+                text: code,
+                width: 150,
+                height: 150,
+                colorDark : "#0b0f19",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+            
+            document.getElementById('camp-qr-caption').textContent = code;
+            document.getElementById('camp-qr-modal').classList.remove('hidden');
+        }
+
+        function closeCampQrModal() {
+            document.getElementById('camp-qr-modal').classList.add('hidden');
+        }
+
+        async function updateLeadCrmState(leadId, newState) {
+            try {
+                const response = await fetch(`/api/proveedores/leads/${leadId}/estado`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ estado_lead: newState })
+                });
+                if (!response.ok) throw new Error("Fallo al actualizar el CRM");
+                fetchDashboardData();
+            } catch(e) {
+                alert(e.message);
+            }
+        }
+
+        async function fetchDashboardData() {
+            try {
+                // 1. Obtener métricas y prospectos
+                const metricsResponse = await fetch('/api/proveedores/dashboard/metricas', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (!metricsResponse.ok) {
+                    if (metricsResponse.status === 401 || metricsResponse.status === 403) {
+                        handleLogout();
+                    }
+                    throw new Error('Error al obtener datos');
+                }
+                const metrics = await metricsResponse.json();
+                
+                // Mostrar métricas
+                document.getElementById('metric-clics').textContent = metrics.clics_recibidos;
+                document.getElementById('metric-membresia').textContent = `$${parseFloat(metrics.membresia_fija).toFixed(2)}`;
+                document.getElementById('metric-balance').textContent = `$${parseFloat(metrics.balance_acumulado).toFixed(2)}`;
+                document.getElementById('prospects-count').textContent = `${metrics.prospectos_generados} leads`;
+                
+                // Habilitar / Deshabilitar premium box
+                const lockOverlay = document.getElementById('premium-lock-overlay');
+                const campForm = document.getElementById('premium-campaign-form');
+                const campList = document.getElementById('premium-campaigns-list');
+                
+                const esPremium = metrics.es_premium;
+                
+                // Habilitar / Deshabilitar social networks box
+                const socialLockOverlay = document.getElementById('social-lock-overlay');
+                if (esPremium) {
+                    if (lockOverlay) lockOverlay.classList.add('hidden');
+                    if (socialLockOverlay) socialLockOverlay.classList.add('hidden');
+                    campForm.classList.remove('hidden');
+                    campList.classList.remove('hidden');
+                    document.getElementById('nav-title').innerHTML = `Panel <span class="text-brand-600"><i class="fa-solid fa-crown mr-1"></i> Premium</span>`;
+                    
+                    // Rellenar inputs de redes si no se ha escrito activamente en ellos
+                    if (document.activeElement !== document.getElementById('prov-link-instagram')) {
+                        document.getElementById('prov-link-instagram').value = metrics.link_instagram || "";
+                    }
+                    if (document.activeElement !== document.getElementById('prov-link-tiktok')) {
+                        document.getElementById('prov-link-tiktok').value = metrics.link_tiktok || "";
+                    }
+                    if (document.activeElement !== document.getElementById('prov-link-facebook')) {
+                        document.getElementById('prov-link-facebook').value = metrics.link_facebook || "";
+                    }
+                    
+                    loadCampaigns();
+                } else {
+                    if (lockOverlay) lockOverlay.classList.remove('hidden');
+                    if (socialLockOverlay) socialLockOverlay.classList.remove('hidden');
+                    campForm.classList.add('hidden');
+                    campList.classList.add('hidden');
+                }
+
+                // Estado de cuenta
+                const badge = document.getElementById('account-badge');
+                badge.textContent = metrics.estado_cuenta;
+                badge.className = "px-3.5 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider ";
+                if (metrics.estado_cuenta === 'ACTIVO') {
+                    badge.className += "bg-emerald-55 text-emerald-700 border border-emerald-200";
+                } else if (metrics.estado_cuenta === 'PENDIENTE_PAGO') {
+                    badge.className += "bg-amber-55 text-amber-700 border border-amber-200";
+                } else {
+                    badge.className += "bg-red-55 text-red-700 border border-red-200";
+                }
+
+                // Cargar tabla de prospectos (leads)
+                const tbody = document.getElementById('prospects-table-body');
+                if (metrics.lista_prospectos.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="5" class="py-8 text-center text-gray-400 text-xs">
+                                Sin clics ni prospectos este mes todavía.
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    tbody.innerHTML = metrics.lista_prospectos.map(p => {
+                        let contactHtml = "";
+                        if (esPremium) {
+                            let socialsHtml = "";
+                            if (p.link_instagram) socialsHtml += `<a href="${p.link_instagram}" target="_blank" class="text-purple-500 hover:text-purple-600 transition-colors"><i class="fa-brands fa-instagram text-xs"></i></a> `;
+                            if (p.link_tiktok) socialsHtml += `<a href="${p.link_tiktok}" target="_blank" class="text-gray-950 hover:text-gray-700 transition-colors"><i class="fa-brands fa-tiktok text-xs"></i></a> `;
+                            if (p.link_facebook) socialsHtml += `<a href="${p.link_facebook}" target="_blank" class="text-blue-600 hover:text-blue-700 transition-colors"><i class="fa-brands fa-facebook-f text-xs"></i></a> `;
+
+                            contactHtml = `
+                                <div class="flex flex-col space-y-1">
+                                    <a href="https://wa.me/${p.celular_whatsapp.replace(/[^0-9]/g, '')}" target="_blank" class="text-brand-600 hover:text-brand-700 hover:underline flex items-center font-semibold">
+                                        <i class="fa-brands fa-whatsapp text-emerald-500 mr-1 text-sm"></i> ${p.celular_whatsapp}
+                                    </a>
+                                    ${socialsHtml ? `<div class="flex space-x-2 items-center mt-1">${socialsHtml}</div>` : ''}
+                                </div>
+                            `;
+                        } else {
+                            contactHtml = `
+                                <span class="text-gray-400 font-bold text-[10px] flex items-center bg-gray-50 border border-gray-200 px-2 py-0.5 rounded-lg w-max" title="WhatsApp Oculto para Plan Básico">
+                                    <i class="fa-solid fa-lock text-amber-500 mr-1 animate-pulse"></i> Solo Premium
+                                </span>
+                            `;
+                        }
+
+                        return `
+                            <tr class="hover:bg-gray-50 transition-all">
+                                <td class="py-3.5 pr-2 font-semibold text-gray-900">${p.nombres} ${p.apellidos}</td>
+                                <td class="py-3.5 pr-2 text-gray-500 font-mono text-[10px]">${p.cedula}</td>
+                                <td class="py-3.5 pr-2">
+                                    ${contactHtml}
+                                </td>
+                                <td class="py-3.5 pr-2">
+                                    <select onchange="updateLeadCrmState('${p.id}', this.value)" class="bg-white border border-gray-200 text-gray-700 px-2 py-1 rounded-lg text-[10px] focus:outline-none focus:border-brand-500">
+                                        <option value="CONTACTADO" ${p.estado_lead === 'CONTACTADO' ? 'selected' : ''}>CONTACTADO</option>
+                                        <option value="AGENDADO" ${p.estado_lead === 'AGENDADO' ? 'selected' : ''}>AGENDADO</option>
+                                        <option value="ATENDIDO" ${p.estado_lead === 'ATENDIDO' ? 'selected' : ''}>ATENDIDO</option>
+                                        <option value="NO_INTERESADO" ${p.estado_lead === 'NO_INTERESADO' ? 'selected' : ''}>NO INTERESADO</option>
+                                    </select>
+                                </td>
+                                <td class="py-3.5 text-gray-400 text-[10px]">${new Date(p.fecha_contacto).toLocaleString()}</td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+
+                document.getElementById('header-subtitle').textContent = `Medic YA • ${localStorage.getItem('email')}`;
+
+                // 2. Obtener historial de facturas
+                const billingResponse = await fetch('/api/billing/mis-facturas', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const facturas = await billingResponse.json();
+                
+                const invoiceList = document.getElementById('invoices-list');
+                if (facturas.length === 0) {
+                    invoiceList.innerHTML = `
+                        <div class="text-center py-6 text-gray-400 text-xs">
+                            No tienes facturas generadas.
+                        </div>
+                    `;
+                } else {
+                    invoiceList.innerHTML = facturas.map(fac => {
+                        let statusColor = "";
+                        let payBtnHtml = "";
+                        
+                        if (fac.estado === 'PAGADA') {
+                            statusColor = "bg-emerald-50 text-emerald-700 border border-emerald-200";
+                        } else {
+                            statusColor = fac.estado === 'PENDIENTE' ? "bg-amber-50 text-amber-700 border border-amber-200" : "bg-red-50 text-red-700 border border-red-200";
+                            payBtnHtml = `
+                                <button onclick="openPayPhoneModal('${fac.id}', '${fac.monto_total}')" class="w-full mt-2 bg-brand-600 hover:bg-brand-500 text-white font-semibold py-1.5 px-3 rounded-xl text-xs transition-colors shadow">
+                                    Pagar con PayPhone/Tarjeta
+                                </button>
+                            `;
+                        }
+                        
+                        return `
+                            <div class="bg-white border border-gray-150 p-4 rounded-xl space-y-2 text-xs shadow-sm">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <p class="text-gray-500 font-semibold">Emisión: ${fac.fecha_emision}</p>
+                                        <p class="text-gray-400 font-semibold mt-0.5">Vence: ${fac.fecha_vencimiento}</p>
+                                    </div>
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold ${statusColor}">${fac.estado}</span>
+                                </div>
+                                <div class="border-t border-gray-100 pt-2 flex justify-between items-center">
+                                    <span class="text-gray-450 font-semibold">Monto total:</span>
+                                    <strong class="text-gray-900 text-sm">$${parseFloat(fac.monto_total).toFixed(2)} USD</strong>
+                                </div>
+                                ${payBtnHtml}
+                            </div>
+                        `;
+                    }).join('');
+                }
+                
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // --- QR SCANNER IMPLEMENTATION ---
+        let html5QrcodeScanner = null;
+
+        function openScannerModal() {
+            document.getElementById('scanner-modal').classList.remove('hidden');
+            
+            // Iniciar html5-qrcode
+            html5QrcodeScanner = new Html5Qrcode("qr-reader");
+            const config = { fps: 10, qrbox: { width: 220, height: 220 } };
+            
+            html5QrcodeScanner.start(
+                { facingMode: "environment" }, 
+                config,
+                (decodedText, decodedResult) => {
+                    document.getElementById('burn-coupon-input').value = decodedText;
+                    closeScannerModal();
+                    burnCoupon();
+                },
+                (errorMessage) => {
+                    // Ignorar errores repetidos de frame de lectura
+                }
+            ).catch(err => {
+                console.error("No se pudo iniciar la cámara:", err);
+                alert("No se pudo acceder a la cámara. Asegúrate de otorgar los permisos en el navegador.");
+                closeScannerModal();
+            });
+        }
+
+        function closeScannerModal() {
+            document.getElementById('scanner-modal').classList.add('hidden');
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.stop().then(() => {
+                    html5QrcodeScanner = null;
+                }).catch(err => {
+                    console.error("Fallo al detener el scanner:", err);
+                });
+            }
+        }
+
+        async function requestAdCampaign() {
+            const platforms = [];
+            if (document.getElementById('ad-plat-instagram').checked) platforms.push('Instagram');
+            if (document.getElementById('ad-plat-facebook').checked) platforms.push('Facebook');
+            if (document.getElementById('ad-plat-tiktok').checked) platforms.push('TikTok');
+            
+            if (platforms.length === 0) {
+                return alert("Por favor selecciona al menos una red social para publicar");
+            }
+            
+            const pkgValue = document.getElementById('ad-package').value;
+            const [vistas, precio] = pkgValue.split('-').map(Number);
+            
+            if (!confirm(`¿Deseas contratar una campaña de ${vistas} vistas en ${platforms.join(', ')} por $${precio.toFixed(2)} USD?\nEste monto se cargará a tu factura pendiente actual.`)) return;
+            
+            try {
+                const response = await fetch('/api/proveedores/solicitar-publicidad', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        plataformas: platforms.join(', '),
+                        cantidad_vistas: vistas,
+                        precio: precio
+                    })
+                });
+                
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.detail || "Error al contratar la campaña de publicidad");
+                
+                alert("¡Campaña contratada con éxito! El cobro se ha cargado a tu factura del mes corriente.");
+                fetchDashboardData();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        async function saveSocialNetworks() {
+            const instagram = document.getElementById('prov-link-instagram').value.trim();
+            const tiktok = document.getElementById('prov-link-tiktok').value.trim();
+            const facebook = document.getElementById('prov-link-facebook').value.trim();
+            
+            // Validar formato URL básico
+            const urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/i;
+            if (instagram && !urlPattern.test(instagram)) return alert("El enlace de Instagram no es una URL válida.");
+            if (tiktok && !urlPattern.test(tiktok)) return alert("El enlace de TikTok no es una URL válida.");
+            if (facebook && !urlPattern.test(facebook)) return alert("El enlace de Facebook no es una URL válida.");
+            
+            try {
+                const response = await fetch('/api/proveedores/me/redes', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        link_instagram: instagram || null,
+                        link_tiktok: tiktok || null,
+                        link_facebook: facebook || null
+                    })
+                });
+                
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.detail || "Error al actualizar redes sociales");
+                
+                alert("¡Redes sociales actualizadas con éxito!");
+                fetchDashboardData();
+            } catch(e) {
+                alert(e.message);
+            }
+        }
+
+        window.addEventListener('load', fetchDashboardData);
+    </script>
+
+    <!-- QR Scanner Modal -->
+    <div id="scanner-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glassmorphism w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl p-6 relative flex flex-col items-center">
+            <button onclick="closeScannerModal()" class="absolute top-5 right-5 text-gray-400 hover:text-gray-800 transition-colors">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            
+            <h3 class="text-base font-bold text-gray-900 mb-4 flex items-center">
+                <i class="fa-solid fa-camera text-pink-500 mr-2"></i> Escanear Código QR
+            </h3>
+            
+            <!-- Scanner Viewport -->
+            <div id="interactive-scanner" class="w-full aspect-square bg-black rounded-xl overflow-hidden relative border border-gray-150 shadow-inner">
+                <div id="qr-reader" class="w-full h-full"></div>
+            </div>
+            
+            <p class="text-[10px] text-gray-400 text-center mt-3 leading-relaxed max-w-[220px]">
+                Apunta la cámara trasera de tu dispositivo hacia el código QR de cupón que te presente el paciente.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

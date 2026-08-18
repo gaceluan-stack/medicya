@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: medic-ya
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+        placeholder: "Ingresa tu Connection String de Supabase (postgresql://...)"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "10080" # 7 días

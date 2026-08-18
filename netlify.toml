@@ -1,0 +1,25 @@
+[build]
+  publish = "app/templates"
+
+# Proxy de API: Redirige las llamadas locales /api/* al servidor de producción en Render
+[[redirects]]
+  from = "/api/*"
+  to = "https://medic-ya.onrender.com/api/:splat"
+  status = 200
+  force = true
+
+# Redirecciones para mantener las URLs limpias y compatibles con FastAPI
+[[redirects]]
+  from = "/login"
+  to = "/login.html"
+  status = 200
+
+[[redirects]]
+  from = "/dashboard/proveedor"
+  to = "/dashboard_prov.html"
+  status = 200
+
+[[redirects]]
+  from = "/dashboard/admin"
+  to = "/dashboard_admin.html"
+  status = 200

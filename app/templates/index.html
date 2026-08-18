@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medic YA - Conexión de Salud Geolocalizada</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            500: '#0d9488',
+                            600: '#0f766e',
+                            700: '#115e59',
+                            800: '#134e4a',
+                        },
+                        dark: {
+                            900: '#f8fafc', // Fondo light slate
+                            800: '#ffffff', // Paneles blancos
+                            700: '#f1f5f9', // Fondos grises claros
+                            600: '#cbd5e1'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Leaflet Marker Cluster -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+    <!-- QRCode library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#0d9488">
+    <style>
+        .auth-blur {
+            filter: blur(4px);
+            user-select: none;
+            pointer-events: none;
+        }
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #f8fafc;
+        }
+        .leaflet-popup-content-wrapper {
+            background-color: #ffffff !important;
+            color: #1f2937 !important;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+        }
+        .leaflet-popup-tip {
+            background-color: #ffffff !important;
+        }
+        .glassmorphism {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        .custom-leaflet-marker {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+    </style>
+</head>
+<body class="text-gray-700 overflow-hidden h-screen flex flex-col">
+
+    <!-- Top Navbar -->
+    <header class="glassmorphism border-b border-gray-200/80 px-6 py-4 flex justify-between items-center z-10">
+        <div class="flex items-center space-x-3">
+            <div class="bg-gradient-to-tr from-brand-600 to-brand-500 p-2.5 rounded-xl shadow-md shadow-brand-500/10">
+                <i class="fa-solid fa-heart-pulse text-white text-xl animate-pulse"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold tracking-tight text-gray-900">Medic <span class="text-brand-500">YA</span></h1>
+                <p class="text-xs text-gray-400">Salud al alcance de un clic</p>
+            </div>
+        </div>
+        
+        <!-- User Status / Actions -->
+        <div id="nav-user-container" class="flex items-center space-x-4">
+            <!-- Cargado dinámicamente -->
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 flex flex-col md:flex-row relative overflow-hidden">
+        
+        <!-- Left Control Sidebar -->
+        <aside class="w-full md:w-96 glassmorphism border-r border-gray-200/80 flex flex-col h-1/2 md:h-full z-10 overflow-y-auto">
+            
+            <!-- Wallet and Referral area (Only if logged in) -->
+            <div id="paciente-b2c-panel" class="hidden p-4 m-4 bg-gradient-to-br from-brand-50/50 to-white border border-brand-500/10 rounded-2xl space-y-3.5 shadow-sm">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-semibold uppercase text-brand-600 tracking-wider">Tu Billetera</span>
+                    <button onclick="openWalletModal()" class="text-xs font-bold text-white bg-brand-600 hover:bg-brand-500 px-3 py-1.5 rounded-xl transition-all flex items-center space-x-1 shadow-sm">
+                        <i class="fa-solid fa-wallet"></i> <span>Mis Cupones</span>
+                    </button>
+                </div>
+                
+                <div class="flex space-x-2 pt-1">
+                    <button onclick="copyReferralLink()" class="flex-1 bg-white hover:bg-gray-50 border border-gray-200 py-2 px-2.5 rounded-xl text-[10px] font-semibold text-gray-600 flex items-center justify-center space-x-1.5 transition-colors shadow-sm">
+                        <i class="fa-solid fa-share-nodes text-brand-500"></i> <span>Invitar Amigo</span>
+                    </button>
+                    <button onclick="openPromoModal()" class="flex-1 bg-white hover:bg-gray-50 border border-gray-200 py-2 px-2.5 rounded-xl text-[10px] font-semibold text-gray-600 flex items-center justify-center space-x-1.5 transition-colors shadow-sm">
+                        <i class="fa-solid fa-qrcode text-pink-500"></i> <span>Canjear Código</span>
+                    </button>
+                </div>
+                <button onclick="openAdCampaignModal()" class="w-full bg-white hover:bg-brand-50 border border-brand-200 hover:border-brand-300 py-2 px-2.5 rounded-xl text-[10px] font-bold text-brand-600 flex items-center justify-center space-x-1.5 transition-colors shadow-sm mt-2">
+                    <i class="fa-solid fa-rectangle-ad text-brand-500"></i> <span>📢 Promocionar mi Negocio</span>
+                </button>
+            </div>
+
+            <!-- Contenido Principal de la barra lateral (Filtros y Lista) -->
+            <div id="sidebar-main-content" class="flex-1 flex flex-col overflow-hidden">
+                <!-- Categories Filters -->
+                <div class="p-4 border-b border-gray-100">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">Filtrar por Categoría</h3>
+                    <div class="grid grid-cols-2 gap-2" id="category-filters">
+                        <button onclick="filterCategory(null)" class="cat-btn active py-2.5 px-3 rounded-xl text-xs font-medium border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 shadow-sm flex items-center justify-center space-x-2 transition-all">
+                            <i class="fa-solid fa-border-all"></i> <span>Todos</span>
+                        </button>
+                        <button onclick="filterCategory('Doctores')" class="cat-btn py-2.5 px-3 rounded-xl text-xs font-medium border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 shadow-sm flex items-center justify-center space-x-2 transition-all">
+                            <i class="fa-solid fa-user-doctor text-sky-500"></i> <span>Doctores</span>
+                        </button>
+                        <button onclick="filterCategory('Spas y Estética')" class="cat-btn py-2.5 px-3 rounded-xl text-xs font-medium border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 shadow-sm flex items-center justify-center space-x-2 transition-all col-span-2">
+                            <i class="fa-solid fa-spa text-pink-500"></i> <span>Spas y Estética</span>
+                        </button>
+                        <button onclick="filterCategory('Clínicas')" class="cat-btn py-2.5 px-3 rounded-xl text-xs font-medium border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 shadow-sm flex items-center justify-center space-x-2 transition-all">
+                            <i class="fa-solid fa-house-medical text-emerald-500"></i> <span>Clínicas</span>
+                        </button>
+                        <button onclick="filterCategory('Farmacias')" class="cat-btn py-2.5 px-3 rounded-xl text-xs font-medium border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 shadow-sm flex items-center justify-center space-x-2 transition-all">
+                            <i class="fa-solid fa-pills text-purple-500"></i> <span>Farmacias</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Filtros Avanzados -->
+                <div class="p-4 bg-gray-50/40 border-b border-gray-100">
+                    <div class="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+                        <div class="bg-brand-500 text-white font-bold py-2.5 px-4 text-xs tracking-wide uppercase flex items-center justify-between">
+                            <span>Filtros Avanzados</span>
+                            <i class="fa-solid fa-sliders text-white/90"></i>
+                        </div>
+                        <div class="p-4 space-y-3.5 text-xs">
+                            <div>
+                                <label class="block text-gray-500 font-bold mb-1">Ciudad:</label>
+                                <select id="filter-ciudad" onchange="applyAdvancedFilters()" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-brand-500 font-semibold text-gray-700 shadow-sm appearance-none cursor-pointer" style="background-image: url('data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%236b7280%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpolyline points=%226 9 12 15 18 9%22/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 10px center; background-size: 14px;">
+                                    <option value="">Todas</option>
+                                    <option value="Quito">Quito</option>
+                                    <option value="Guayaquil">Guayaquil</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-gray-500 font-bold mb-1">Sector:</label>
+                                <select id="filter-sector" onchange="applyAdvancedFilters()" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-brand-500 font-semibold text-gray-700 shadow-sm appearance-none cursor-pointer" style="background-image: url('data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%236b7280%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpolyline points=%226 9 12 15 18 9%22/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 10px center; background-size: 14px;">
+                                    <option value="">Todos</option>
+                                    <option value="La Carolina">La Carolina</option>
+                                    <option value="Cumbayá">Cumbayá</option>
+                                    <option value="Urdesa">Urdesa</option>
+                                    <option value="Samborondón">Samborondón</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-gray-500 font-bold mb-1">Especialidad:</label>
+                                <input type="text" id="filter-especialidad" oninput="applyAdvancedFilters()" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-brand-500 font-semibold text-gray-700 shadow-sm placeholder-gray-400 placeholder:font-normal" placeholder="Ej: Pediatra, Cardiólogo">
+                            </div>
+                            <div>
+                                <label class="block text-gray-500 font-bold mb-1">Calificación:</label>
+                                <select id="filter-rating" onchange="applyAdvancedFilters()" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-brand-500 font-semibold text-gray-700 shadow-sm appearance-none cursor-pointer" style="background-image: url('data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%236b7280%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpolyline points=%226 9 12 15 18 9%22/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 10px center; background-size: 14px;">
+                                    <option value="0">Cualquiera</option>
+                                    <option value="4">⭐⭐⭐⭐+ (4.0+)</option>
+                                    <option value="4.5">⭐⭐⭐⭐½+ (4.5+)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-gray-500 font-bold mb-1">Membresía:</label>
+                                <select id="filter-premium" onchange="applyAdvancedFilters()" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-brand-500 font-semibold text-gray-700 shadow-sm appearance-none cursor-pointer" style="background-image: url('data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%236b7280%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpolyline points=%226 9 12 15 18 9%22/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 10px center; background-size: 14px;">
+                                    <option value="">Todos</option>
+                                    <option value="premium">👑 Premium</option>
+                                    <option value="basic">Normal</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- List of Providers -->
+                <div class="flex-1 p-4 flex flex-col overflow-y-auto">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3" id="list-title">Profesionales Disponibles</h3>
+                    <div id="providers-list" class="space-y-3 flex-1 overflow-y-auto max-h-[400px] md:max-h-none">
+                        <div class="text-center text-gray-400 py-8">
+                            <i class="fa-solid fa-spinner animate-spin text-2xl mb-2 text-brand-500"></i>
+                            <p class="text-xs">Buscando centros médicos cercanos...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vista de Detalle y Enrutamiento (Google Maps Style) -->
+            <div id="sidebar-detail-content" class="hidden p-4 flex flex-col flex-1 overflow-y-auto space-y-4">
+                <button onclick="goBackToList()" class="text-xs font-bold text-brand-600 hover:text-brand-500 flex items-center space-x-1.5 self-start transition-colors">
+                    <i class="fa-solid fa-arrow-left text-[10px]"></i> <span>Volver a la lista</span>
+                </button>
+                <div id="detail-card-body" class="space-y-4 flex-1">
+                    <!-- Rendered dynamically via JS -->
+                </div>
+            </div>
+        </aside>
+
+        <!-- Map Section -->
+        <section id="map" class="flex-1 h-1/2 md:h-full z-0"></section>
+        
+    </main>
+
+    <!-- Register/Login Modal -->
+    <div id="register-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glassmorphism w-full max-w-md rounded-2xl overflow-hidden shadow-2xl transition-transform duration-300 scale-95" id="register-modal-content">
+            <!-- Modal Tabs Headers -->
+            <div class="flex border-b border-gray-150 font-bold text-xs text-gray-500 bg-gray-50/50">
+                <button onclick="switchAuthTab('register')" id="tab-auth-register" class="flex-1 py-3 text-center text-brand-600 border-b-2 border-brand-500 transition-all outline-none">
+                    <i class="fa-solid fa-user-plus mr-1.5"></i> Registrarse
+                </button>
+                <button onclick="switchAuthTab('login')" id="tab-auth-login" class="flex-1 py-3 text-center hover:text-brand-500 transition-all outline-none">
+                    <i class="fa-solid fa-right-to-bracket mr-1.5"></i> Iniciar Sesión
+                </button>
+            </div>
+
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+                <h3 class="text-sm font-bold text-gray-900 flex items-center" id="auth-modal-title">
+                    <i class="fa-solid fa-user-plus text-brand-500 mr-2"></i> Registro de Paciente
+                </h3>
+                <button onclick="closeRegisterModal()" class="text-gray-400 hover:text-gray-800 transition-colors">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            
+            <form onsubmit="submitAuthForm(event)" class="p-6 space-y-4">
+                <!-- Promo banner shown only for register -->
+                <div id="register-promo-banner" class="bg-brand-50 border border-brand-200/60 p-3.5 rounded-xl flex items-center space-x-3 mb-2">
+                    <i class="fa-solid fa-gift text-brand-600 text-xl animate-bounce"></i>
+                    <p id="register-promo-banner-text" class="text-xs text-brand-800 leading-normal">¡Regístrate en 30 segundos y recibe un <strong>Cupón de $5 USD</strong> para tu consulta!</p>
+                </div>
+                
+                <!-- ID de referido oculto -->
+                <input type="hidden" id="reg-referido-id" value="">
+
+                <!-- Registration Only Fields -->
+                <div id="register-only-fields" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 mb-1.5">Nombres</label>
+                            <input type="text" id="reg-nombres" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:border-brand-500 placeholder-gray-400" placeholder="Juan">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 mb-1.5">Apellidos</label>
+                            <input type="text" id="reg-apellidos" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:border-brand-500 placeholder-gray-400" placeholder="Pérez">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 mb-1.5">Cédula / Documento</label>
+                        <input type="text" id="reg-cedula" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:border-brand-500 placeholder-gray-400" placeholder="1712345678">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 mb-1.5">Celular / WhatsApp</label>
+                        <div class="flex space-x-2">
+                            <input type="tel" id="reg-celular" class="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:border-brand-500 placeholder-gray-400" placeholder="+593987654321">
+                            <button type="button" onclick="sendCode('phone')" id="send-phone-code-btn" class="bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200/50 text-[10px] font-bold px-3 py-2 rounded-xl transition-all whitespace-nowrap shadow-sm">
+                                Enviar WA
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 mb-1.5">Correo Electrónico</label>
+                        <div class="flex space-x-2">
+                            <input type="email" id="reg-email" class="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:border-brand-500 placeholder-gray-400" placeholder="juan@correo.com">
+                            <button type="button" onclick="sendCode('email')" id="send-email-code-btn" class="bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200/50 text-[10px] font-bold px-3 py-2 rounded-xl transition-all whitespace-nowrap shadow-sm">
+                                Enviar Correo
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 mb-1.5">Crea tu Contraseña</label>
+                        <input type="password" id="reg-password" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:border-brand-500 placeholder-gray-400" placeholder="Mínimo 6 caracteres" minlength="6">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 mb-1.5">¿Cómo nos conociste?</label>
+                        <select id="reg-origen" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:border-brand-500">
+                            <option value="TikTok">TikTok</option>
+                            <option value="Instagram">Instagram</option>
+                            <option value="Facebook">Facebook</option>
+                            <option value="Referido Personal">Referido Personal</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Login Only Fields -->
+                <div id="login-only-fields" class="hidden space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 mb-1.5">Correo o Celular</label>
+                        <input type="text" id="login-destino" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:border-brand-500 placeholder-gray-400" placeholder="juan@correo.com o +593987654321">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 mb-1.5">Contraseña</label>
+                        <input type="password" id="login-password" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:border-brand-500 placeholder-gray-400" placeholder="Tu contraseña de acceso">
+                    </div>
+                </div>
+
+                <!-- Shared OTP input section -->
+                <div id="verification-code-section" class="hidden animate-fade-in space-y-1">
+                    <label class="block text-xs font-semibold text-gray-500 mb-1 flex items-center">
+                        <i class="fa-solid fa-key text-pink-500 mr-1.5 animate-pulse"></i> Código de Verificación Recibido
+                    </label>
+                    <input type="text" id="reg-verification-code" class="w-full bg-white border border-gray-250 rounded-xl px-3 py-2 text-sm text-center font-mono font-bold tracking-widest text-gray-800 focus:outline-none focus:border-brand-500 placeholder-gray-300" placeholder="000000">
+                    <p class="text-[9px] text-gray-400 mt-0.5">Ingresa el código de 6 dígitos recibido para continuar.</p>
+                </div>
+
+                <button type="submit" id="auth-submit-btn" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 rounded-xl text-xs transition-all shadow-md shadow-brand-500/10 mt-4">
+                    Completar Registro Verificado
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Patient Profile Settings Modal -->
+    <div id="profile-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glassmorphism w-full max-w-md rounded-2xl overflow-hidden shadow-2xl p-6 relative flex flex-col transition-transform duration-300 scale-95" id="profile-modal-content">
+            <button onclick="closeProfileModal()" class="absolute top-5 right-5 text-gray-400 hover:text-gray-800 transition-colors">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            
+            <h3 class="text-base font-bold text-gray-900 mb-4 flex items-center">
+                <i class="fa-solid fa-user-gear text-brand-500 mr-2"></i> Mi Perfil y Redes Sociales
+            </h3>
+            
+            <form onsubmit="submitUpdateProfile(event)" class="space-y-4 text-xs">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-gray-500 font-semibold mb-1">Nombres</label>
+                        <input type="text" id="prof-nombres" required class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:border-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-gray-500 font-semibold mb-1">Apellidos</label>
+                        <input type="text" id="prof-apellidos" required class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:border-brand-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-gray-500 font-semibold mb-1">Celular / WhatsApp</label>
+                    <input type="tel" id="prof-celular" required class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:border-brand-500">
+                </div>
+                
+                <div class="border-t border-gray-150 pt-3.5 mt-2">
+                    <h4 class="font-bold text-gray-900 mb-2 flex items-center">
+                        <i class="fa-solid fa-share-nodes text-brand-500 mr-1.5"></i> Mis Redes Sociales Públicas
+                    </h4>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-gray-550 font-medium mb-1">Enlace de Instagram</label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-purple-500"><i class="fa-brands fa-instagram"></i></span>
+                                <input type="url" id="prof-link-instagram" class="w-full bg-white border border-gray-200 rounded-xl pl-8 pr-3 py-2 text-xs text-gray-800 focus:outline-none focus:border-brand-500" placeholder="https://instagram.com/tuperfil">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-gray-550 font-medium mb-1">Enlace de TikTok</label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-pink-500"><i class="fa-brands fa-tiktok"></i></span>
+                                <input type="url" id="prof-link-tiktok" class="w-full bg-white border border-gray-200 rounded-xl pl-8 pr-3 py-2 text-xs text-gray-800 focus:outline-none focus:border-brand-500" placeholder="https://tiktok.com/@tuperfil">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-gray-555 font-medium mb-1">Enlace de Facebook</label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-blue-500"><i class="fa-brands fa-facebook-f"></i></span>
+                                <input type="url" id="prof-link-facebook" class="w-full bg-white border border-gray-200 rounded-xl pl-8 pr-3 py-2 text-xs text-gray-800 focus:outline-none focus:border-brand-500" placeholder="https://facebook.com/tuperfil">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 rounded-xl text-xs transition-all shadow mt-3">
+                    Guardar Perfil y Redes
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Billetera de Cupones Modal -->
+    <div id="wallet-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glassmorphism w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl p-6 relative">
+            <button onclick="closeWalletModal()" class="absolute top-5 right-5 text-gray-400 hover:text-gray-800 transition-colors">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            
+            <h3 class="text-lg font-bold text-gray-900 flex items-center mb-5">
+                <i class="fa-solid fa-wallet text-brand-500 mr-2"></i> Mi Billetera de Cupones
+            </h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Left: List of coupons -->
+                <div class="space-y-2 max-h-[300px] overflow-y-auto pr-2" id="wallet-coupons-list">
+                    <!-- Dinámico -->
+                </div>
+                <!-- Right: QR Display -->
+                <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 flex flex-col items-center justify-center min-h-[220px]">
+                    <div id="qrcode-container" class="bg-white p-2.5 rounded-xl shadow-md border border-gray-100">
+                        <!-- El QR se renderiza aquí -->
+                        <div class="w-32 h-32 flex items-center justify-center text-gray-400 text-center text-xs font-semibold">
+                            Selecciona un cupón activo para ver su QR
+                        </div>
+                    </div>
+                    <p id="qrcode-caption" class="text-xs text-gray-700 mt-3 font-semibold font-mono tracking-widest text-center">N/A</p>
+                    <p class="text-[10px] text-gray-450 mt-1 text-center">Muestra este código al doctor o recepcionista</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Canje de Campaña de Médico Modal -->
+    <div id="promo-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glassmorphism w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl p-6 relative">
+            <button onclick="closePromoModal()" class="absolute top-5 right-5 text-gray-400 hover:text-gray-800 transition-colors">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            
+            <h3 class="text-base font-bold text-gray-900 flex items-center mb-4">
+                <i class="fa-solid fa-qrcode text-pink-500 mr-2"></i> Canjear Cupón de Campaña
+            </h3>
+            <p class="text-xs text-gray-550 mb-4 font-medium">
+                Si escaneaste o recibiste un código promocional de un médico Premium, ingresa el código aquí para cargarlo a tu billetera.
+            </p>
+            
+            <div class="space-y-3">
+                <input type="text" id="promo-code-input" class="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-brand-500 uppercase tracking-widest font-mono text-center placeholder-gray-400" placeholder="EJEM: DRCARLOS5">
+                <button onclick="submitPromoCode()" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 rounded-xl text-xs transition-all shadow-md shadow-brand-500/10">
+                    Canjear en mi billetera
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reseñas Verificadas Modal -->
+    <div id="reviews-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glassmorphism w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl p-6 relative">
+            <button onclick="closeReviewsModal()" class="absolute top-5 right-5 text-gray-400 hover:text-gray-800 transition-colors">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            
+            <h3 class="text-lg font-bold text-gray-900 flex items-center mb-3" id="reviews-title">
+                <i class="fa-solid fa-comments text-brand-500 mr-2"></i> Opiniones Verificadas
+            </h3>
+            <p class="text-xs text-gray-500 mb-4" id="reviews-modal-subtitle">Comentarios de pacientes reales para el doctor</p>
+            
+            <div class="space-y-4">
+                <!-- List of reviews -->
+                <div class="space-y-3 max-h-[250px] overflow-y-auto pr-2" id="reviews-list-container">
+                    <!-- Dinámico -->
+                </div>
+                
+                <!-- Form to leave a review (conditional) -->
+                <div id="post-review-section" class="hidden border-t border-gray-100 pt-4 space-y-3">
+                    <h4 class="text-xs font-bold text-gray-900 uppercase tracking-wider">Dejar una Reseña Verificada</h4>
+                    
+                    <div class="space-y-3">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs font-semibold text-gray-500">Tu calificación:</span>
+                            <select id="review-stars" class="bg-white border border-gray-200 text-gray-700 px-2 py-1.5 rounded-lg text-xs focus:outline-none focus:border-brand-500 font-semibold shadow-sm">
+                                <option value="5">⭐⭐⭐⭐⭐ (Excelente)</option>
+                                <option value="4">⭐⭐⭐⭐ (Muy Bueno)</option>
+                                <option value="3">⭐⭐⭐ (Bueno)</option>
+                                <option value="2">⭐⭐ (Regular)</option>
+                                <option value="1">⭐ (Malo)</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 mb-1">Comentario</label>
+                            <textarea id="review-comment" rows="3" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs text-gray-800 focus:outline-none focus:border-brand-500 placeholder-gray-400" placeholder="Escribe tu opinión de la atención..."></textarea>
+                        </div>
+                        
+                        <button onclick="submitReview()" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2 rounded-xl transition-all shadow-md shadow-brand-500/10">
+                            Publicar Reseña Verificada
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Patient Ad Campaign Request Modal -->
+    <div id="patient-ad-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glassmorphism w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl p-6 relative flex flex-col">
+            <button onclick="closeAdCampaignModal()" class="absolute top-5 right-5 text-gray-400 hover:text-gray-800 transition-colors">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            
+            <h3 class="text-base font-bold text-gray-900 mb-2 flex items-center">
+                <i class="fa-solid fa-rectangle-ad text-brand-500 mr-2"></i> Promocionar mi Negocio
+            </h3>
+            <p class="text-[10px] text-gray-500 mb-4 leading-normal">Llega a miles de usuarios diarios promocionando tu sitio o local comercial en nuestras redes sociales oficiales.</p>
+            
+            <div class="space-y-4 text-xs">
+                <!-- Platforms check -->
+                <div>
+                    <label class="block text-gray-400 font-semibold mb-1.5">Redes Sociales:</label>
+                    <div class="flex space-x-2">
+                        <label class="flex items-center space-x-1.5 bg-gray-50 border border-gray-150 px-2.5 py-1.5 rounded-xl cursor-pointer">
+                            <input type="checkbox" id="pat-ad-instagram" checked class="text-brand-600 rounded">
+                            <span class="text-[10px]">Instagram</span>
+                        </label>
+                        <label class="flex items-center space-x-1.5 bg-gray-50 border border-gray-150 px-2.5 py-1.5 rounded-xl cursor-pointer">
+                            <input type="checkbox" id="pat-ad-facebook" checked class="text-brand-600 rounded">
+                            <span class="text-[10px]">Facebook</span>
+                        </label>
+                        <label class="flex items-center space-x-1.5 bg-gray-50 border border-gray-150 px-2.5 py-1.5 rounded-xl cursor-pointer">
+                            <input type="checkbox" id="pat-ad-tiktok" checked class="text-brand-600 rounded">
+                            <span class="text-[10px]">TikTok</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Packages -->
+                <div>
+                    <label class="block text-gray-400 font-semibold mb-1.5">Paquete de Publicidad:</label>
+                    <select id="pat-ad-package" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-brand-500 font-medium">
+                        <option value="500-10">500 reproducciones en redes por $10 USD</option>
+                        <option value="1000-20">1000 reproducciones en redes por $20 USD</option>
+                        <option value="2000-25">2000 reproducciones en redes por $25 USD</option>
+                    </select>
+                </div>
+
+                <button onclick="submitPatientAdCampaign()" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 rounded-xl transition-all shadow-md">
+                    Solicitar Promoción
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Dialog / Toast Notification -->
+    <div id="toast" class="fixed bottom-6 right-6 z-50 hidden glassmorphism rounded-2xl p-4 shadow-2xl max-w-sm border-l-4 border-brand-500 flex items-start space-x-3 transition-all duration-300 translate-y-10 opacity-0">
+        <div class="text-brand-500 bg-brand-500/10 p-2 rounded-xl">
+            <i class="fa-solid fa-circle-check text-xl"></i>
+        </div>
+        <div class="flex-1">
+            <h4 class="text-sm font-semibold text-gray-900" id="toast-title">Notificación</h4>
+            <p class="text-xs text-gray-500 mt-1" id="toast-msg">Mensaje de notificación.</p>
+        </div>
+        <button onclick="closeToast()" class="text-gray-400 hover:text-gray-800 transition-colors">
+            <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+    </div>
+
+    <!-- Frontend JS logic -->
+    <script src="/static/js/map.js?v=1.0.8"></script>
+    <script src="/static/js/main.js?v=1.0.8"></script>
+</body>
+</html>

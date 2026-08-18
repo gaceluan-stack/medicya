@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso Profesionales - Medic YA</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            500: '#0d9488',
+                            600: '#0f766e',
+                            700: '#115e59',
+                            850: '#134e4a',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #f8fafc;
+        }
+        .glassmorphism {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+        }
+    </style>
+</head>
+<body class="text-gray-600 min-h-screen flex items-center justify-center p-4">
+
+    <!-- Background decorative blur shapes -->
+    <div class="absolute top-10 left-10 w-72 h-72 bg-brand-500/5 rounded-full blur-3xl -z-10 animate-pulse"></div>
+    <div class="absolute bottom-10 right-10 w-96 h-96 bg-brand-600/5 rounded-full blur-3xl -z-10"></div>
+
+    <div class="w-full max-w-md glassmorphism rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.05)] p-8 relative">
+        
+        <!-- Back to Map button -->
+        <a href="/" class="absolute top-6 left-6 text-gray-400 hover:text-gray-800 transition-colors text-xs font-semibold flex items-center">
+            <i class="fa-solid fa-arrow-left mr-1.5"></i> Volver al mapa
+        </a>
+
+        <div class="text-center mt-6 mb-8">
+            <div class="inline-block bg-gradient-to-tr from-brand-600 to-brand-500 p-3 rounded-2xl shadow-md shadow-brand-500/10 mb-3">
+                <i class="fa-solid fa-user-shield text-white text-xl"></i>
+            </div>
+            <h2 class="text-xl font-bold tracking-tight text-gray-900">Acceso Profesional</h2>
+            <p class="text-xs text-gray-500 mt-1">Ingresa tus credenciales para administrar tu consultorio</p>
+        </div>
+
+        <!-- Error Alert -->
+        <div id="error-alert" class="hidden mb-5 bg-red-50 border border-red-200 p-3 rounded-xl flex items-start space-x-2 text-xs text-red-700">
+            <i class="fa-solid fa-triangle-exclamation text-red-500 mt-0.5"></i>
+            <span id="error-msg">Error al iniciar sesión.</span>
+        </div>
+
+        <form onsubmit="handleLogin(event)" class="space-y-4">
+            <div>
+                <label class="block text-[10px] font-bold text-gray-500 mb-1.5 uppercase tracking-wider">Correo Electrónico</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-gray-400">
+                        <i class="fa-solid fa-envelope"></i>
+                    </span>
+                    <input type="email" id="email" required class="w-full bg-white border border-gray-200 rounded-xl pl-10 pr-4 py-3 text-xs text-gray-800 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20 transition-all placeholder-gray-400" placeholder="medico@medicya.com">
+                </div>
+            </div>
+
+            <div>
+                <div class="flex justify-between items-center mb-1.5">
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider">Contraseña</label>
+                </div>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-gray-400">
+                        <i class="fa-solid fa-lock"></i>
+                    </span>
+                    <input type="password" id="password" required class="w-full bg-white border border-gray-200 rounded-xl pl-10 pr-4 py-3 text-xs text-gray-800 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20 transition-all placeholder-gray-400" placeholder="••••••••">
+                </div>
+            </div>
+
+            <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 rounded-xl text-xs transition-all shadow-md shadow-brand-500/10 mt-4">
+                <i class="fa-solid fa-arrow-right-to-bracket mr-2"></i> Iniciar Sesión
+            </button>
+        </form>
+
+        <div class="text-center mt-6 text-[10px] text-gray-400">
+            ¿No tienes cuenta? Los perfiles de médicos y spas son creados únicamente por la administración de la red.
+        </div>
+    </div>
+
+    <!-- Frontend login handler -->
+    <script>
+        async function handleLogin(event) {
+            event.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorAlert = document.getElementById('error-alert');
+            const errorMsg = document.getElementById('error-msg');
+            
+            errorAlert.classList.add('hidden');
+            
+            // Construir formulario urlencoded para OAuth2 de FastAPI
+            const formData = new URLSearchParams();
+            formData.append('username', email);
+            formData.append('password', password);
+            
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.detail || 'Error al iniciar sesión');
+                }
+                
+                // Guardar token y rol en localStorage
+                localStorage.setItem('token', data.access_token);
+                localStorage.setItem('role', data.role);
+                localStorage.setItem('email', email);
+                
+                // Redirigir según el rol
+                if (data.role === 'ADMIN') {
+                    window.location.href = '/dashboard/admin';
+                } else if (data.role === 'PROVEEDOR') {
+                    window.location.href = '/dashboard/proveedor';
+                } else {
+                    window.location.href = '/';
+                }
+                
+            } catch (err) {
+                errorMsg.textContent = err.message;
+                errorAlert.classList.remove('hidden');
+            }
+        }
+        
+        // Verificar si ya tiene sesión iniciada al entrar
+        const token = localStorage.getItem('token');
+        const role = localStorage.getItem('role');
+        if (token && role) {
+            if (role === 'ADMIN') window.location.href = '/dashboard/admin';
+            if (role === 'PROVEEDOR') window.location.href = '/dashboard/proveedor';
+        }
+    </script>
+</body>
+</html>

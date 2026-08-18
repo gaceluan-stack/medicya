@@ -1,0 +1,24 @@
+/* Estilos adicionales para mejorar la presentación */
+#map {
+    height: 100%;
+    width: 100%;
+}
+
+/* Ocultar barra de desplazamiento predeterminada manteniendo funcionalidad scroll */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* Transición suave para popups y modales */
+.custom-provider-pin {
+    transition: transform 0.2s ease-in-out;
+}
+
+.custom-provider-pin:hover {
+    transform: scale(1.15) !important;
+    z-index: 1000 !important;
+}
