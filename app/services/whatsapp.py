@@ -24,6 +24,7 @@ async def send_whatsapp_notification(
     
     # Payload para la API de WhatsApp (Simulado o Twilio / Meta Cloud API)
     payload = {
+        "messaging_product": "whatsapp",
         "to": provider_phone,
         "type": "text",
         "text": {
