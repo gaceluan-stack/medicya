@@ -136,10 +136,10 @@
                             <input type="text" id="prov-especialidad" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-brand-500 placeholder-gray-400" placeholder="Pediatra">
                         </div>
                     </div>
-                    <div class="grid grid-cols-2 gap-2">
+                    <div class="grid grid-cols-3 gap-2">
                         <div>
-                            <label class="block text-gray-400 font-semibold mb-1">Categoría</label>
-                            <select id="prov-categoria" required class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-brand-500">
+                            <label class="block text-gray-400 font-semibold mb-1 text-[10px]">Categoría</label>
+                            <select id="prov-categoria" required class="w-full bg-white border border-gray-200 rounded-xl px-2.5 py-2 text-[11px] text-gray-800 focus:outline-none focus:border-brand-500">
                                 <option value="Doctores">Doctores</option>
                                 <option value="Spas y Estética">Spas y Estética</option>
                                 <option value="Clínicas">Clínicas</option>
@@ -148,8 +148,12 @@
                             </select>
                         </div>
                         <div>
-                            <label class="block text-gray-400 font-semibold mb-1">Precio Consulta (USD)</label>
-                            <input type="number" step="0.01" id="prov-precio" required class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-brand-500" placeholder="35.00">
+                            <label class="block text-gray-400 font-semibold mb-1 text-[10px]">Precio Consulta (USD)</label>
+                            <input type="number" step="0.01" id="prov-precio" required class="w-full bg-white border border-gray-200 rounded-xl px-2.5 py-2 text-[11px] text-gray-800 focus:outline-none focus:border-brand-500" placeholder="35.00">
+                        </div>
+                        <div>
+                            <label class="block text-gray-400 font-semibold mb-1 text-[10px]">Celular / WhatsApp</label>
+                            <input type="tel" id="prov-celular" required class="w-full bg-white border border-gray-200 rounded-xl px-2.5 py-2 text-[11px] text-gray-800 focus:outline-none focus:border-brand-500 placeholder-gray-450" placeholder="Ej: 0998765432">
                         </div>
                     </div>
                     
@@ -965,6 +969,7 @@
                 especialidad: document.getElementById('prov-especialidad').value || null,
                 categoria: document.getElementById('prov-categoria').value,
                 precio_consulta: parseFloat(document.getElementById('prov-precio').value),
+                celular_whatsapp: document.getElementById('prov-celular').value.trim(),
                 latitud: parseFloat(document.getElementById('prov-lat').value),
                 longitud: parseFloat(document.getElementById('prov-lng').value),
                 email: document.getElementById('prov-email').value,
@@ -1045,6 +1050,7 @@
             document.getElementById('prov-especialidad').value = p.especialidad || "";
             document.getElementById('prov-categoria').value = p.categoria || "Doctores";
             document.getElementById('prov-precio').value = p.precio_consulta || "";
+            document.getElementById('prov-celular').value = p.celular_whatsapp || "";
             document.getElementById('prov-lat').value = p.latitud || "";
             document.getElementById('prov-lng').value = p.longitud || "";
             document.getElementById('prov-email').value = p.email || "";

@@ -363,12 +363,13 @@ function applyAdvancedFilters() {
                 </div>
             `;
         } else if (prov.es_premium) {
+            const cleanWa = (prov.celular_whatsapp || '593987654321').replace(/[^0-9]/g, '');
             listSocialHtml = `
                 <div class="flex space-x-2 pt-2 border-t border-gray-100 justify-start mt-1">
                     ${prov.link_instagram ? `<a href="${prov.link_instagram}" target="_blank" onclick="event.stopPropagation();" class="w-7 h-7 rounded-full bg-teal-50 border border-teal-200 hover:bg-teal-100 text-teal-600 hover:text-teal-800 flex items-center justify-center transition-all" title="Instagram"><i class="fa-brands fa-instagram text-xs"></i></a>` : ''}
                     ${prov.link_tiktok ? `<a href="${prov.link_tiktok}" target="_blank" onclick="event.stopPropagation();" class="w-7 h-7 rounded-full bg-teal-50 border border-teal-200 hover:bg-teal-100 text-teal-600 hover:text-teal-800 flex items-center justify-center transition-all" title="TikTok"><i class="fa-brands fa-tiktok text-xs"></i></a>` : ''}
                     ${prov.link_facebook ? `<a href="${prov.link_facebook}" target="_blank" onclick="event.stopPropagation();" class="w-7 h-7 rounded-full bg-teal-50 border border-teal-200 hover:bg-teal-100 text-teal-600 hover:text-teal-800 flex items-center justify-center transition-all" title="Facebook"><i class="fa-brands fa-facebook-f text-xs"></i></a>` : ''}
-                    <a href="https://wa.me/593981234567" target="_blank" onclick="event.stopPropagation();" class="w-7 h-7 rounded-full bg-teal-50 border border-teal-200 hover:bg-teal-100 text-teal-600 hover:text-teal-800 flex items-center justify-center transition-all" title="WhatsApp"><i class="fa-brands fa-whatsapp text-xs"></i></a>
+                    <a href="https://wa.me/${cleanWa}" target="_blank" onclick="event.stopPropagation();" class="w-7 h-7 rounded-full bg-teal-50 border border-teal-200 hover:bg-teal-100 text-teal-600 hover:text-teal-800 flex items-center justify-center transition-all" title="WhatsApp"><i class="fa-brands fa-whatsapp text-xs"></i></a>
                     <a href="#" target="_blank" onclick="event.stopPropagation();" class="w-7 h-7 rounded-full bg-teal-50 border border-teal-200 hover:bg-teal-100 text-teal-650 hover:text-teal-800 flex items-center justify-center transition-all" title="LinkedIn"><i class="fa-brands fa-linkedin-in text-xs"></i></a>
                 </div>
             `;
@@ -407,7 +408,7 @@ function applyAdvancedFilters() {
 }
 
 // Clic al botón de contactar (Registra lead y abre WhatsApp con el mensaje personalizado de cotización)
-async function contactProviderWithQuote(id, name, quoteMessage) {
+async function contactProviderWithQuote(id, name, phone, quoteMessage) {
     const token = localStorage.getItem('token');
     if (!token) {
         alert("Para concretar tu cita y cotización, por favor regístrate primero.");
@@ -429,7 +430,8 @@ async function contactProviderWithQuote(id, name, quoteMessage) {
         alert(`¡Cotización registrada en Medic YA!\nTe redirigiremos a WhatsApp.`);
         
         // Redirigir a WhatsApp con el texto codificado
-        window.open(`https://wa.me/593987654321?text=${encodeURIComponent(quoteMessage)}`, '_blank');
+        const cleanPhone = (phone || '593987654321').replace(/[^0-9]/g, '');
+        window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(quoteMessage)}`, '_blank');
         
     } catch(err) {
         alert(err.message);
@@ -605,7 +607,7 @@ function triggerWhatsAppQuote(providerId) {
     message += `\n💰 *TOTAL ESTIMADO:* $${total.toFixed(2)} USD\n\n`;
     message += `Por favor, confírmame tu disponibilidad para agendar. ¡Muchas gracias!`;
     
-    contactProviderWithQuote(prov.id, prov.nombre_comercial, message);
+    contactProviderWithQuote(prov.id, prov.nombre_comercial, prov.celular_whatsapp, message);
 }
 
 function goBackToList() {

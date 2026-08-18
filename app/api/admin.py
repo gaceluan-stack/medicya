@@ -60,6 +60,7 @@ def create_proveedor(
         usuario_id=nuevo_usuario.id,
         ruc_cedula=prov_in.ruc_cedula,
         nombre_comercial=prov_in.nombre_comercial,
+        celular_whatsapp=prov_in.celular_whatsapp,
         categoria=prov_in.categoria,
         especialidad=prov_in.especialidad,
         latitud=prov_in.latitud,
@@ -83,6 +84,7 @@ def create_proveedor(
         usuario_id=nuevo_proveedor.usuario_id,
         ruc_cedula=nuevo_proveedor.ruc_cedula,
         nombre_comercial=nuevo_proveedor.nombre_comercial,
+        celular_whatsapp=nuevo_proveedor.celular_whatsapp,
         categoria=nuevo_proveedor.categoria,
         especialidad=nuevo_proveedor.especialidad,
         latitud=nuevo_proveedor.latitud,
@@ -534,6 +536,8 @@ def update_proveedor(
     # 5. Actualizar los demás campos del proveedor
     if prov_in.nombre_comercial is not None:
         proveedor.nombre_comercial = prov_in.nombre_comercial
+    if prov_in.celular_whatsapp is not None:
+        proveedor.celular_whatsapp = prov_in.celular_whatsapp
     if prov_in.categoria is not None:
         proveedor.categoria = prov_in.categoria
     if prov_in.especialidad is not None:
@@ -572,6 +576,7 @@ def update_proveedor(
         usuario_id=proveedor.usuario_id,
         ruc_cedula=proveedor.ruc_cedula,
         nombre_comercial=proveedor.nombre_comercial,
+        celular_whatsapp=proveedor.celular_whatsapp,
         categoria=proveedor.categoria,
         especialidad=proveedor.especialidad,
         latitud=proveedor.latitud,

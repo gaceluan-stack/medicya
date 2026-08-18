@@ -9,6 +9,7 @@ class ProveedorCreate(BaseModel):
     password: str = Field(..., min_length=6)
     ruc_cedula: str = Field(..., min_length=5, max_length=20)
     nombre_comercial: str = Field(..., min_length=2, max_length=150)
+    celular_whatsapp: str = Field(..., min_length=7, max_length=20)
     categoria: CategoriaProveedor
     especialidad: Optional[str] = None
     latitud: float
@@ -28,6 +29,7 @@ class ProveedorResponse(BaseModel):
     usuario_id: str
     ruc_cedula: str
     nombre_comercial: str
+    celular_whatsapp: Optional[str] = None
     categoria: CategoriaProveedor
     especialidad: Optional[str]
     latitud: float
@@ -57,6 +59,7 @@ class ProveedorRedesUpdate(BaseModel):
 class ProveedorAdminUpdate(BaseModel):
     nombre_comercial: Optional[str] = Field(None, min_length=2, max_length=150)
     ruc_cedula: Optional[str] = Field(None, min_length=5, max_length=20)
+    celular_whatsapp: Optional[str] = Field(None, min_length=7, max_length=20)
     categoria: Optional[CategoriaProveedor] = None
     especialidad: Optional[str] = None
     latitud: Optional[float] = None

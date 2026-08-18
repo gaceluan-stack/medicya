@@ -39,10 +39,10 @@ try:
             except Exception:
                 pass
         
-        # Ciudad y Sector para proveedores
-        for col in ["ciudad", "sector"]:
+        # Ciudad, Sector y Celular para proveedores
+        for col, col_type in [("ciudad", "VARCHAR(100)"), ("sector", "VARCHAR(100)"), ("celular_whatsapp", "VARCHAR(20) DEFAULT '593987654321'")]:
             try:
-                conn.execute(text(f"ALTER TABLE proveedores_servicio ADD COLUMN {col} VARCHAR(100);"))
+                conn.execute(text(f"ALTER TABLE proveedores_servicio ADD COLUMN {col} {col_type};"))
             except Exception:
                 pass
 except Exception as e:

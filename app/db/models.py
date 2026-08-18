@@ -120,6 +120,7 @@ class ProveedorServicio(Base):
     link_facebook = Column(String(255), nullable=True)
     ciudad = Column(String(100), nullable=True)
     sector = Column(String(100), nullable=True)
+    celular_whatsapp = Column(String(20), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relaciones
