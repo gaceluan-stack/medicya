@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     SMTP_USERNAME: str = os.getenv("SMTP_USERNAME", "info@medicya.com")
     SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "mock-smtp-password")
     
+    # Google Maps API Key
+    GOOGLE_MAPS_API_KEY: str = os.getenv("GOOGLE_MAPS_API_KEY", "")
+    
     class Config:
         case_sensitive = True
 

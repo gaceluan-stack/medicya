@@ -37,9 +37,7 @@
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- FontAwesome Icons -->
-    <!-- Leaflet CSS & JS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body {
             font-family: 'Outfit', sans-serif;
@@ -481,46 +479,96 @@
 
     <!-- JS logic -->
     <script>
-        let pickerMap = null;
-        let pickerMarker = null;
+        let googleMap = null;
+        let googleMarker = null;
+        let autocomplete = null;
 
-        function initPickerMap() {
-            const defaultCoords = [-0.180653, -78.467834]; // Quito (La Carolina)
+        async function loadGoogleMapsScript() {
+            try {
+                const res = await fetch('/api/auth/google-maps-key');
+                const data = await res.json();
+                const key = data.key || "";
+                
+                // Cargar script de Google Maps dinámicamente
+                const script = document.createElement('script');
+                script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places&callback=initGoogleMap`;
+                script.async = true;
+                script.defer = true;
+                document.head.appendChild(script);
+            } catch (err) {
+                console.error("Error al cargar Google Maps API Key:", err);
+                const script = document.createElement('script');
+                script.src = `https://maps.googleapis.com/maps/api/js?libraries=places&callback=initGoogleMap`;
+                script.async = true;
+                script.defer = true;
+                document.head.appendChild(script);
+            }
+        }
+
+        function initGoogleMap() {
+            const defaultCoords = { lat: -0.180653, lng: -78.467834 }; // Quito (La Carolina)
             
-            if (pickerMap) return; // Evitar duplicados
+            // Crear el mapa de Google
+            googleMap = new google.maps.Map(document.getElementById('admin-picker-map'), {
+                center: defaultCoords,
+                zoom: 13,
+                mapTypeControl: false,
+                streetViewControl: false
+            });
             
-            // Crear el mapa picker
-            pickerMap = L.map('admin-picker-map').setView(defaultCoords, 13);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap contributors'
-            }).addTo(pickerMap);
-            
-            pickerMarker = L.marker(defaultCoords, {
+            // Crear marcador arrastrable
+            googleMarker = new google.maps.Marker({
+                position: defaultCoords,
+                map: googleMap,
                 draggable: true
-            }).addTo(pickerMap);
+            });
             
             // Evento: Al arrastrar el marcador, actualizar campos
-            pickerMarker.on('dragend', function (e) {
-                const position = pickerMarker.getLatLng();
-                document.getElementById('prov-lat').value = position.lat.toFixed(6);
-                document.getElementById('prov-lng').value = position.lng.toFixed(6);
+            googleMarker.addListener('dragend', function() {
+                const position = googleMarker.getPosition();
+                document.getElementById('prov-lat').value = position.lat().toFixed(6);
+                document.getElementById('prov-lng').value = position.lng().toFixed(6);
             });
             
             // Evento: Al hacer clic en el mapa, mover marcador y actualizar campos
-            pickerMap.on('click', function (e) {
-                pickerMarker.setLatLng(e.latlng);
-                document.getElementById('prov-lat').value = e.latlng.lat.toFixed(6);
-                document.getElementById('prov-lng').value = e.latlng.lng.toFixed(6);
+            googleMap.addListener('click', function(e) {
+                googleMarker.setPosition(e.latLng);
+                document.getElementById('prov-lat').value = e.latLng.lat().toFixed(6);
+                document.getElementById('prov-lng').value = e.latLng.lng().toFixed(6);
             });
-
+            
+            // Inicializar el Autocomplete de Google Places en el input de búsqueda
+            const input = document.getElementById('prov-direccion-search');
+            autocomplete = new google.maps.places.Autocomplete(input, {
+                componentRestrictions: { country: 'ec' }, // Restringir a Ecuador
+                fields: ['geometry', 'name', 'formatted_address']
+            });
+            
+            // Evento: Al seleccionar una sugerencia del autocompletado
+            autocomplete.addListener('place_changed', function() {
+                const place = autocomplete.getPlace();
+                if (!place.geometry || !place.geometry.location) {
+                    return;
+                }
+                
+                // Mover mapa y marcador
+                googleMap.setCenter(place.geometry.location);
+                googleMap.setZoom(17);
+                googleMarker.setPosition(place.geometry.location);
+                
+                // Actualizar latitud y longitud
+                document.getElementById('prov-lat').value = place.geometry.location.lat().toFixed(6);
+                document.getElementById('prov-lng').value = place.geometry.location.lng().toFixed(6);
+            });
+            
             // Evento: Al cambiar la ciudad en el dropdown, re-centrar el mapa y marcador
             document.getElementById('prov-ciudad').addEventListener('change', function(e) {
                 const ciudad = e.target.value;
-                const coords = ciudad === 'Quito' ? [-0.180653, -78.467834] : [-2.1894, -79.8890];
-                pickerMap.setView(coords, 13);
-                pickerMarker.setLatLng(coords);
-                document.getElementById('prov-lat').value = coords[0].toFixed(6);
-                document.getElementById('prov-lng').value = coords[1].toFixed(6);
+                const coords = ciudad === 'Quito' ? { lat: -0.180653, lng: -78.467834 } : { lat: -2.1894, lng: -79.8890 };
+                googleMap.setCenter(coords);
+                googleMarker.setPosition(coords);
+                document.getElementById('prov-lat').value = coords.lat.toFixed(6);
+                document.getElementById('prov-lng').value = coords.lng.toFixed(6);
             });
         }
 
@@ -537,30 +585,20 @@
             btn.disabled = true;
             
             try {
-                // Filtro de país: Ecuador (ec)
-                const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=ec&limit=1`;
-                const response = await fetch(url, {
-                    headers: { 'Accept-Language': 'es' }
+                const geocoder = new google.maps.Geocoder();
+                geocoder.geocode({ address: query, componentRestrictions: { country: 'ec' } }, function(results, status) {
+                    if (status === 'OK') {
+                        const location = results[0].geometry.location;
+                        googleMap.setCenter(location);
+                        googleMap.setZoom(17);
+                        googleMarker.setPosition(location);
+                        
+                        document.getElementById('prov-lat').value = location.lat().toFixed(6);
+                        document.getElementById('prov-lng').value = location.lng().toFixed(6);
+                    } else {
+                        alert("No se pudo encontrar la dirección en Google Maps. Motivo: " + status);
+                    }
                 });
-                const data = await response.json();
-                
-                if (data.length === 0) {
-                    alert("No se encontró la dirección. Intenta agregar más detalles como la ciudad (ej: 'Av. de los Shyris, Quito').");
-                    return;
-                }
-                
-                const result = data[0];
-                const lat = parseFloat(result.lat);
-                const lng = parseFloat(result.lon);
-                
-                // Actualizar campos
-                document.getElementById('prov-lat').value = lat.toFixed(6);
-                document.getElementById('prov-lng').value = lng.toFixed(6);
-                
-                // Centrar mapa y mover marcador
-                const coords = [lat, lng];
-                pickerMap.setView(coords, 16);
-                pickerMarker.setLatLng(coords);
             } catch (err) {
                 alert("Error al buscar la dirección: " + err.message);
             } finally {
@@ -571,7 +609,7 @@
 
         // Inicializar al cargar la página
         window.addEventListener('DOMContentLoaded', () => {
-            initPickerMap();
+            loadGoogleMapsScript();
         });
 
         const token = localStorage.getItem('token');

@@ -266,3 +266,8 @@ def login_paciente(
         "token_type": "bearer",
         "role": db_usuario.rol.value
     }
+
+@router.get("/google-maps-key")
+def get_google_maps_key():
+    from app.config import settings
+    return {"key": settings.GOOGLE_MAPS_API_KEY}
