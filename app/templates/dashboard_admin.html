@@ -573,8 +573,8 @@
         }
 
         async function geocodeAddress() {
-            const query = document.getElementById('prov-direccion-search').value.trim();
-            if (!query) {
+            const rawQuery = document.getElementById('prov-direccion-search').value.trim();
+            if (!rawQuery) {
                 alert("Por favor, ingresa una dirección para buscar.");
                 return;
             }
@@ -583,10 +583,21 @@
             const oldText = btn.innerHTML;
             btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i>`;
             btn.disabled = true;
+
+            // Preprocesar dirección: quitar referencias comunes de Ecuador como "entre ...", "junto a ...", etc.
+            let query = rawQuery.toLowerCase();
+            query = query.split(/\bentre\b/i)[0];
+            query = query.split(/\besquina\b/i)[0];
+            query = query.split(/\bjunto a\b/i)[0];
+            query = query.trim();
+
+            const ciudad = document.getElementById('prov-ciudad').value;
+            // Añadir ciudad y país para refinar la precisión
+            const searchQuery = `${query}, ${ciudad}, Ecuador`;
             
             try {
                 const geocoder = new google.maps.Geocoder();
-                geocoder.geocode({ address: query, componentRestrictions: { country: 'ec' } }, function(results, status) {
+                geocoder.geocode({ address: searchQuery, componentRestrictions: { country: 'ec' } }, async function(results, status) {
                     if (status === 'OK') {
                         const location = results[0].geometry.location;
                         googleMap.setCenter(location);
@@ -595,12 +606,72 @@
                         
                         document.getElementById('prov-lat').value = location.lat().toFixed(6);
                         document.getElementById('prov-lng').value = location.lng().toFixed(6);
+                        btn.innerHTML = oldText;
+                        btn.disabled = false;
                     } else {
-                        alert("No se pudo encontrar la dirección en Google Maps. Motivo: " + status);
+                        console.warn("Google Geocoder falló con status: " + status + ". Probando fallback Nominatim...");
+                        await geocodeNominatimFallback(searchQuery, oldText, btn);
                     }
                 });
             } catch (err) {
-                alert("Error al buscar la dirección: " + err.message);
+                console.warn("Google Geocoder causó excepción. Probando fallback Nominatim...", err);
+                await geocodeNominatimFallback(searchQuery, oldText, btn);
+            }
+        }
+
+        async function geocodeNominatimFallback(searchQuery, oldText, btn) {
+            try {
+                // Hacer búsqueda geocodificada en OSM (es gratuita y no requiere API key)
+                const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1`;
+                const response = await fetch(url, {
+                    headers: { 'Accept-Language': 'es' }
+                });
+                const data = await response.json();
+                
+                if (data.length === 0) {
+                    // Reintentar sin el número de calle si es posible
+                    const queryWords = searchQuery.split(',');
+                    if (queryWords.length > 1) {
+                        const cleanStreet = queryWords[0].replace(/\d+/g, '').trim();
+                        const fallbackQuery = `${cleanStreet}, ${queryWords[1]}, Ecuador`;
+                        console.log("Reintentando con consulta simplificada: " + fallbackQuery);
+                        const retryResponse = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fallbackQuery)}&limit=1`, {
+                            headers: { 'Accept-Language': 'es' }
+                        });
+                        const retryData = await retryResponse.json();
+                        if (retryData.length > 0) {
+                            const result = retryData[0];
+                            const lat = parseFloat(result.lat);
+                            const lng = parseFloat(result.lon);
+                            
+                            document.getElementById('prov-lat').value = lat.toFixed(6);
+                            document.getElementById('prov-lng').value = lng.toFixed(6);
+                            
+                            const coords = { lat: lat, lng: lng };
+                            googleMap.setCenter(coords);
+                            googleMap.setZoom(16);
+                            googleMarker.setPosition(coords);
+                            return;
+                        }
+                    }
+                    alert("No se pudo encontrar la dirección. Por favor, selecciona el punto de forma manual haciendo clic sobre el mapa de Google.");
+                    return;
+                }
+                
+                const result = data[0];
+                const lat = parseFloat(result.lat);
+                const lng = parseFloat(result.lon);
+                
+                document.getElementById('prov-lat').value = lat.toFixed(6);
+                document.getElementById('prov-lng').value = lng.toFixed(6);
+                
+                // Mover mapa y marcador de Google
+                const coords = { lat: lat, lng: lng };
+                googleMap.setCenter(coords);
+                googleMap.setZoom(17);
+                googleMarker.setPosition(coords);
+            } catch (err) {
+                alert("Error al buscar la dirección en los servidores: " + err.message);
             } finally {
                 btn.innerHTML = oldText;
                 btn.disabled = false;
