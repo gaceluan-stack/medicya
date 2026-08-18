@@ -84,10 +84,9 @@ def register_paciente(
                 detail="Se requiere un código de verificación para completar el registro."
             )
         
-        # Buscar código para email o teléfono
+        # Buscar código para email (el celular ya no requiere OTP)
         db_code = db.query(models.CodigoVerificacion).filter(
-            (models.CodigoVerificacion.destino == paciente_in.email) | 
-            (models.CodigoVerificacion.destino == paciente_in.celular_whatsapp),
+            models.CodigoVerificacion.destino == paciente_in.email,
             models.CodigoVerificacion.codigo == paciente_in.verification_code,
             models.CodigoVerificacion.usado == False,
             models.CodigoVerificacion.expira_at > datetime.utcnow()

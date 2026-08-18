@@ -1,7 +1,8 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional
+import re
 from app.db.models import CanalAtribucion
 
 class PacienteCreate(BaseModel):
@@ -17,6 +18,22 @@ class PacienteCreate(BaseModel):
     link_tiktok: Optional[str] = None
     link_instagram: Optional[str] = None
     link_facebook: Optional[str] = None
+
+    @field_validator("celular_whatsapp")
+    @classmethod
+    def validate_celular(cls, v):
+        # Eliminar cualquier caracter no numérico excepto el signo +
+        cleaned = re.sub(r"[^\d\+]", "", v)
+        # Expresión regular para Ecuador: 
+        # - 09 seguido de 8 dígitos (10 en total)
+        # - +5939 seguido de 8 dígitos (13 en total)
+        # - 5939 seguido de 8 dígitos (12 en total)
+        pattern = r"^(09\d{8}|\+5939\d{8}|5939\d{8})$"
+        if not re.match(pattern, cleaned):
+            raise ValueError(
+                "El número de celular debe ser un celular real (ej: 0998765432 o +593998765432)"
+            )
+        return cleaned
 
 class PacienteResponse(BaseModel):
     id: str
