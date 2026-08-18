@@ -714,16 +714,13 @@
                 }
                 loadData();
             } catch (err) {
-                alert("Error al ejecutar cron");
-            }
-        }
-
-        async function loadData() {
+         async function loadData() {
+            // 1. Cargar atribución publicitaria
             try {
-                // 1. Cargar atribución publicitaria
                 const attResponse = await fetch('/api/admin/atribucion', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
+                if (!attResponse.ok) throw new Error("Error en respuesta");
                 const attData = await attResponse.json();
                 
                 const attContainer = document.getElementById('attribution-cards');
@@ -750,11 +747,21 @@
                         <p class="text-[10px] text-gray-400 font-semibold">${item.porcentaje}% de pacientes</p>
                     </div>
                 `).join('');
+            } catch (err) {
+                console.error("Error al cargar atribución:", err);
+                document.getElementById('attribution-cards').innerHTML = `
+                    <div class="col-span-full py-4 text-center text-xs text-red-500 font-semibold">
+                        <i class="fa-solid fa-triangle-exclamation mr-1.5"></i> No se pudo cargar el reporte de atribución.
+                    </div>
+                `;
+            }
 
-                // 2. Cargar tabla de proveedores
+            // 2. Cargar tabla de proveedores
+            try {
                 const provsResponse = await fetch('/api/admin/proveedores', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
+                if (!provsResponse.ok) throw new Error("Error en respuesta");
                 const provs = await provsResponse.json();
                 allProviders = provs; // Guardar globalmente para editar
                 
@@ -800,11 +807,23 @@
                         `;
                     }).join('');
                 }
+            } catch (err) {
+                console.error("Error al cargar proveedores:", err);
+                document.getElementById('providers-table-body').innerHTML = `
+                    <tr>
+                        <td colspan="6" class="py-8 text-center text-red-500 font-semibold">
+                            <i class="fa-solid fa-triangle-exclamation mr-1.5"></i> Error al cargar el directorio de proveedores.
+                        </td>
+                    </tr>
+                `;
+            }
 
-                // 3. Cargar tabla de usuarios generales del sistema
+            // 3. Cargar tabla de usuarios generales del sistema
+            try {
                 const usersResponse = await fetch('/api/admin/usuarios', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
+                if (!usersResponse.ok) throw new Error("Error en respuesta");
                 const users = await usersResponse.json();
                 document.getElementById('users-count').textContent = `${users.length} usuarios`;
                 
@@ -833,7 +852,7 @@
                                 <td class="py-3 pr-2">
                                     <span class="px-2 py-0.5 rounded text-[10px] font-bold ${rolBadge}">${u.rol}</span>
                                 </td>
-                                <td class="py-3 pr-2 text-gray-500 max-w-[200px] truncate" title="${u.detalle || ''}">${u.detalle || 'N/A'}</td>
+                                <td class="py-3 pr-2 text-gray-555 max-w-[200px] truncate" title="${u.detalle || ''}">${u.detalle || 'N/A'}</td>
                                 <td class="py-3 pr-2">
                                     <span class="px-2 py-0.5 rounded border text-[10px] font-bold ${badgeColor}">${u.estado}</span>
                                 </td>
@@ -849,11 +868,23 @@
                         `;
                     }).join('');
                 }
+            } catch (err) {
+                console.error("Error al cargar usuarios:", err);
+                document.getElementById('users-table-body').innerHTML = `
+                    <tr>
+                        <td colspan="5" class="py-8 text-center text-red-500 font-semibold">
+                            <i class="fa-solid fa-triangle-exclamation mr-1.5"></i> Error al cargar los usuarios.
+                        </td>
+                    </tr>
+                `;
+            }
 
-                // 4. Cargar campañas de publicidad
+            // 4. Cargar campañas de publicidad
+            try {
                 const adsResponse = await fetch('/api/admin/publicidad/campanas', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
+                if (!adsResponse.ok) throw new Error("Error en respuesta");
                 const ads = await adsResponse.json();
                 
                 const adsContainer = document.getElementById('ad-campaigns-list');
@@ -865,8 +896,8 @@
                     adsContainer.innerHTML = ads.map(a => {
                         let statusColor = "";
                         if (a.estado === 'PENDIENTE') statusColor = "bg-gray-100 text-gray-600 border border-gray-200";
-                        else if (a.estado === 'EN_CURSO') statusColor = "bg-sky-55 text-sky-700 border border-sky-200 animate-pulse";
-                        else statusColor = "bg-emerald-55 text-emerald-700 border border-emerald-200";
+                        else if (a.estado === 'EN_CURSO') statusColor = "bg-sky-50 text-sky-700 border border-sky-200 animate-pulse";
+                        else statusColor = "bg-emerald-50 text-emerald-700 border border-emerald-200";
                         
                         let progressPercent = Math.min(100, Math.round((a.veces_publicado / a.cantidad_vistas) * 100));
                         
@@ -876,7 +907,7 @@
                                     <strong class="text-gray-900 truncate max-w-[140px]" title="${a.email}">${a.email}</strong>
                                     <span class="px-2 py-0.5 rounded text-[9px] font-bold ${statusColor}">${a.estado}</span>
                                 </div>
-                                <div class="text-[10px] text-gray-500 flex justify-between">
+                                <div class="text-[10px] text-gray-550 flex justify-between">
                                     <span>Publicados: <strong>${a.veces_publicado}/${a.cantidad_vistas}</strong></span>
                                     <span class="font-semibold text-brand-600">$${a.precio.toFixed(2)} USD</span>
                                 </div>
@@ -889,10 +920,15 @@
                         `;
                     }).join('');
                 }
-
             } catch (err) {
-                console.error(err);
+                console.error("Error al cargar campañas:", err);
+                document.getElementById('ad-campaigns-list').innerHTML = `
+                    <p class="text-xs text-red-500 text-center py-8">
+                        <i class="fa-solid fa-triangle-exclamation mr-1"></i> No se pudieron cargar las campañas.
+                    </p>
+                `;
             }
+            
             loadPatients();
         }
 
