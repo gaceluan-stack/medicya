@@ -562,8 +562,9 @@ def update_proveedor(
         proveedor.ciudad = prov_in.ciudad
         
     # Calcular sector dinámicamente si cambiaron coordenadas o ciudad
-    from app.services.regions import get_sector_by_coordinates
-    proveedor.sector = get_sector_by_coordinates(proveedor.latitud, proveedor.longitud, proveedor.ciudad)
+    from app.services.sector_classifier import classify_location
+    _, sector_auto = classify_location(proveedor.latitud, proveedor.longitud)
+    proveedor.sector = sector_auto
 
     db.add(proveedor)
     db.add(usuario)
