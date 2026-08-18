@@ -24,29 +24,32 @@ except Exception as e:
 # Migraciones de redes sociales y clasificación para proveedores y pacientes
 try:
     from sqlalchemy import text
-    with engine.begin() as conn:
-        # Redes sociales para proveedores
-        for col in ["link_tiktok", "link_instagram", "link_facebook"]:
-            try:
+    
+    # Redes sociales para proveedores
+    for col in ["link_tiktok", "link_instagram", "link_facebook"]:
+        try:
+            with engine.begin() as conn:
                 conn.execute(text(f"ALTER TABLE proveedores_servicio ADD COLUMN {col} VARCHAR(255);"))
-            except Exception:
-                pass
-        
-        # Redes sociales para pacientes
-        for col in ["link_tiktok", "link_instagram", "link_facebook"]:
-            try:
+        except Exception:
+            pass
+    
+    # Redes sociales para pacientes
+    for col in ["link_tiktok", "link_instagram", "link_facebook"]:
+        try:
+            with engine.begin() as conn:
                 conn.execute(text(f"ALTER TABLE pacientes ADD COLUMN {col} VARCHAR(255);"))
-            except Exception:
-                pass
-        
-        # Ciudad, Sector y Celular para proveedores
-        for col, col_type in [("ciudad", "VARCHAR(100)"), ("sector", "VARCHAR(100)"), ("celular_whatsapp", "VARCHAR(20) DEFAULT '593987654321'")]:
-            try:
+        except Exception:
+            pass
+    
+    # Ciudad, Sector y Celular para proveedores
+    for col, col_type in [("ciudad", "VARCHAR(100)"), ("sector", "VARCHAR(100)"), ("celular_whatsapp", "VARCHAR(20) DEFAULT '593987654321'")]:
+        try:
+            with engine.begin() as conn:
                 conn.execute(text(f"ALTER TABLE proveedores_servicio ADD COLUMN {col} {col_type};"))
-            except Exception:
-                pass
+        except Exception:
+            pass
 except Exception as e:
-    pass
+    print("Error general en migraciones:", e)
 
 # Auto-clasificar proveedores existentes sin ciudad/sector
 try:
