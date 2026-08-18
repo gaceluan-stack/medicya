@@ -37,7 +37,9 @@
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Leaflet CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         body {
             font-family: 'Outfit', sans-serif;
@@ -152,16 +154,30 @@
                         </div>
                     </div>
                     
-                    <div class="border-t border-gray-100 pt-2">
-                        <p class="text-[10px] text-brand-600 mb-2 font-bold"><i class="fa-solid fa-location-crosshairs mr-1"></i> Coordenadas del Consultorio</p>
+                    <div class="border-t border-gray-100 pt-2 space-y-2">
+                        <p class="text-[10px] text-brand-600 font-bold mb-1 flex items-center justify-between">
+                            <span><i class="fa-solid fa-location-crosshairs mr-1"></i> Ubicación del Consultorio</span>
+                            <span class="text-[9px] text-gray-400 font-normal">Busca la dirección o haz clic en el mapa</span>
+                        </p>
+                        
+                        <div class="flex space-x-2">
+                            <input type="text" id="prov-direccion-search" class="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs text-gray-800 focus:outline-none focus:border-brand-500 placeholder-gray-400" placeholder="Buscar dirección (ej: Av. Amazonas, Quito)">
+                            <button type="button" onclick="geocodeAddress()" class="bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200/50 text-[10px] font-bold px-3 py-2 rounded-xl transition-all shadow-sm">
+                                Buscar
+                            </button>
+                        </div>
+
+                        <!-- Mini Map Picker Container -->
+                        <div id="admin-picker-map" class="w-full h-36 rounded-xl border border-gray-200 bg-gray-50 overflow-hidden shadow-inner relative z-10"></div>
+
                         <div class="grid grid-cols-2 gap-2">
                             <div>
-                                <label class="block text-gray-400 font-semibold mb-1">Latitud</label>
-                                <input type="number" step="any" id="prov-lat" required class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-brand-500" value="-0.180653">
+                                <label class="block text-[9px] text-gray-400 font-semibold mb-1">Latitud</label>
+                                <input type="number" step="any" id="prov-lat" required class="w-full bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-xs text-gray-800 focus:outline-none focus:border-brand-500" value="-0.180653">
                             </div>
                             <div>
-                                <label class="block text-gray-400 font-semibold mb-1">Longitud</label>
-                                <input type="number" step="any" id="prov-lng" required class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-brand-500" value="-78.467834">
+                                <label class="block text-[9px] text-gray-400 font-semibold mb-1">Longitud</label>
+                                <input type="number" step="any" id="prov-lng" required class="w-full bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-xs text-gray-800 focus:outline-none focus:border-brand-500" value="-78.467834">
                             </div>
                         </div>
                     </div>
@@ -465,6 +481,99 @@
 
     <!-- JS logic -->
     <script>
+        let pickerMap = null;
+        let pickerMarker = null;
+
+        function initPickerMap() {
+            const defaultCoords = [-0.180653, -78.467834]; // Quito (La Carolina)
+            
+            if (pickerMap) return; // Evitar duplicados
+            
+            // Crear el mapa picker
+            pickerMap = L.map('admin-picker-map').setView(defaultCoords, 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(pickerMap);
+            
+            pickerMarker = L.marker(defaultCoords, {
+                draggable: true
+            }).addTo(pickerMap);
+            
+            // Evento: Al arrastrar el marcador, actualizar campos
+            pickerMarker.on('dragend', function (e) {
+                const position = pickerMarker.getLatLng();
+                document.getElementById('prov-lat').value = position.lat.toFixed(6);
+                document.getElementById('prov-lng').value = position.lng.toFixed(6);
+            });
+            
+            // Evento: Al hacer clic en el mapa, mover marcador y actualizar campos
+            pickerMap.on('click', function (e) {
+                pickerMarker.setLatLng(e.latlng);
+                document.getElementById('prov-lat').value = e.latlng.lat.toFixed(6);
+                document.getElementById('prov-lng').value = e.latlng.lng.toFixed(6);
+            });
+
+            // Evento: Al cambiar la ciudad en el dropdown, re-centrar el mapa y marcador
+            document.getElementById('prov-ciudad').addEventListener('change', function(e) {
+                const ciudad = e.target.value;
+                const coords = ciudad === 'Quito' ? [-0.180653, -78.467834] : [-2.1894, -79.8890];
+                pickerMap.setView(coords, 13);
+                pickerMarker.setLatLng(coords);
+                document.getElementById('prov-lat').value = coords[0].toFixed(6);
+                document.getElementById('prov-lng').value = coords[1].toFixed(6);
+            });
+        }
+
+        async function geocodeAddress() {
+            const query = document.getElementById('prov-direccion-search').value.trim();
+            if (!query) {
+                alert("Por favor, ingresa una dirección para buscar.");
+                return;
+            }
+            
+            const btn = document.querySelector('button[onclick="geocodeAddress()"]');
+            const oldText = btn.innerHTML;
+            btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i>`;
+            btn.disabled = true;
+            
+            try {
+                // Filtro de país: Ecuador (ec)
+                const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=ec&limit=1`;
+                const response = await fetch(url, {
+                    headers: { 'Accept-Language': 'es' }
+                });
+                const data = await response.json();
+                
+                if (data.length === 0) {
+                    alert("No se encontró la dirección. Intenta agregar más detalles como la ciudad (ej: 'Av. de los Shyris, Quito').");
+                    return;
+                }
+                
+                const result = data[0];
+                const lat = parseFloat(result.lat);
+                const lng = parseFloat(result.lon);
+                
+                // Actualizar campos
+                document.getElementById('prov-lat').value = lat.toFixed(6);
+                document.getElementById('prov-lng').value = lng.toFixed(6);
+                
+                // Centrar mapa y mover marcador
+                const coords = [lat, lng];
+                pickerMap.setView(coords, 16);
+                pickerMarker.setLatLng(coords);
+            } catch (err) {
+                alert("Error al buscar la dirección: " + err.message);
+            } finally {
+                btn.innerHTML = oldText;
+                btn.disabled = false;
+            }
+        }
+
+        // Inicializar al cargar la página
+        window.addEventListener('DOMContentLoaded', () => {
+            initPickerMap();
+        });
+
         const token = localStorage.getItem('token');
         const role = localStorage.getItem('role');
         if (!token || role !== 'ADMIN') {
