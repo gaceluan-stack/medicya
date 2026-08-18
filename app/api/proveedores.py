@@ -58,7 +58,8 @@ def get_proveedores_mapa(
                 estado=user.estado,
                 link_tiktok=prov.link_tiktok if prov.es_premium else None,
                 link_instagram=prov.link_instagram if prov.es_premium else None,
-                link_facebook=prov.link_facebook if prov.es_premium else None
+                link_facebook=prov.link_facebook if prov.es_premium else None,
+                servicios_adicionales=prov.servicios_adicionales
             )
         )
     return result
