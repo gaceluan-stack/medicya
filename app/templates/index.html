@@ -233,9 +233,9 @@
 
     <!-- Register/Login Modal -->
     <div id="register-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="glassmorphism w-full max-w-md rounded-2xl overflow-hidden shadow-2xl transition-transform duration-300 scale-95" id="register-modal-content">
+        <div class="glassmorphism w-full max-w-md max-h-[92vh] flex flex-col rounded-2xl overflow-hidden shadow-2xl transition-transform duration-300 scale-95" id="register-modal-content">
             <!-- Modal Tabs Headers -->
-            <div class="flex border-b border-gray-150 font-bold text-xs text-gray-500 bg-gray-50/50">
+            <div class="flex border-b border-gray-150 font-bold text-xs text-gray-500 bg-gray-50/50 flex-shrink-0">
                 <button onclick="switchAuthTab('register')" id="tab-auth-register" class="flex-1 py-3 text-center text-brand-600 border-b-2 border-brand-500 transition-all outline-none">
                     <i class="fa-solid fa-user-plus mr-1.5"></i> Registrarse
                 </button>
@@ -244,7 +244,7 @@
                 </button>
             </div>
 
-            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center flex-shrink-0">
                 <h3 class="text-sm font-bold text-gray-900 flex items-center" id="auth-modal-title">
                     <i class="fa-solid fa-user-plus text-brand-500 mr-2"></i> Registro de Paciente
                 </h3>
@@ -253,7 +253,7 @@
                 </button>
             </div>
             
-            <form onsubmit="submitAuthForm(event)" class="p-6 space-y-4">
+            <form onsubmit="submitAuthForm(event)" class="p-6 space-y-4 overflow-y-auto flex-1">
                 <!-- Promo banner shown only for register -->
                 <div id="register-promo-banner" class="bg-brand-50 border border-brand-200/60 p-3.5 rounded-xl flex items-center space-x-3 mb-2">
                     <i class="fa-solid fa-gift text-brand-600 text-xl animate-bounce"></i>
@@ -342,16 +342,16 @@
 
     <!-- Patient Profile Settings Modal -->
     <div id="profile-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="glassmorphism w-full max-w-md rounded-2xl overflow-hidden shadow-2xl p-6 relative flex flex-col transition-transform duration-300 scale-95" id="profile-modal-content">
-            <button onclick="closeProfileModal()" class="absolute top-5 right-5 text-gray-400 hover:text-gray-800 transition-colors">
+        <div class="glassmorphism w-full max-w-md max-h-[92vh] flex flex-col rounded-2xl overflow-hidden shadow-2xl p-6 relative transition-transform duration-300 scale-95" id="profile-modal-content">
+            <button onclick="closeProfileModal()" class="absolute top-5 right-5 text-gray-400 hover:text-gray-800 transition-colors z-10">
                 <i class="fa-solid fa-xmark text-lg"></i>
             </button>
             
-            <h3 class="text-base font-bold text-gray-900 mb-4 flex items-center">
+            <h3 class="text-base font-bold text-gray-900 mb-4 flex items-center flex-shrink-0">
                 <i class="fa-solid fa-user-gear text-brand-500 mr-2"></i> Mi Perfil y Redes Sociales
             </h3>
             
-            <form onsubmit="submitUpdateProfile(event)" class="space-y-4 text-xs">
+            <form onsubmit="submitUpdateProfile(event)" class="space-y-4 text-xs overflow-y-auto flex-1 pr-1">
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-gray-500 font-semibold mb-1">Nombres</label>
