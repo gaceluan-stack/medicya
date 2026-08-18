@@ -485,17 +485,40 @@ function selectProviderForRouting(id) {
     const premiumBadge = prov.es_premium ? "<span class='ml-1.5 text-amber-500 font-bold'>👑 Premium</span>" : "";
     
     // Generar listado de servicios con checkboxes
-    const services = CATEGORY_SERVICES[prov.categoria] || CATEGORY_SERVICES['Doctores'];
+    let services = [];
+    
+    // 1. Determinar el servicio base por categoría
+    const baseNames = {
+        'Doctores': 'Consulta Médica General',
+        'Spas y Estética': 'Masaje Relajante Corporal',
+        'Clínicas': 'Atención de Emergencia 24/7',
+        'Farmacias': 'Atención Farmacéutica Base',
+        'Laboratorios': 'Toma de Muestra a Domicilio'
+    };
+    const baseName = baseNames[prov.categoria] || 'Servicio General';
+    services.push({ id: 'base-service', name: baseName, price: parseFloat(prov.precio_consulta) });
+    
+    // 2. Cargar servicios adicionales personalizados o predefinidos
+    if (prov.servicios_adicionales && Array.isArray(prov.servicios_adicionales) && prov.servicios_adicionales.length > 0) {
+        prov.servicios_adicionales.forEach((s, idx) => {
+            services.push({ id: 'custom-' + idx, name: s.name, price: parseFloat(s.price) });
+        });
+    } else {
+        const catServices = CATEGORY_SERVICES[prov.categoria] || CATEGORY_SERVICES['Doctores'];
+        // Omitir el primer servicio predefinido ya que representaba la consulta general (precio 0)
+        catServices.slice(1).forEach(s => {
+            services.push({ id: s.id, name: s.name, price: parseFloat(s.price) });
+        });
+    }
     
     let servicesHtml = services.map((s, index) => {
-        const finalPrice = s.price === 0 ? parseFloat(prov.precio_consulta) : s.price;
         const checked = index === 0 ? 'checked disabled' : '';
         return `
             <label class="flex items-center space-x-3 bg-white p-2.5 rounded-xl border border-gray-150 hover:border-gray-300 cursor-pointer select-none transition-colors shadow-sm">
-                <input type="checkbox" id="svc-${s.id}" data-name="${s.name}" data-price="${finalPrice}" ${checked} onchange="recalculateQuote('${prov.id}')" class="w-4 h-4 text-brand-600 bg-white border-gray-250 rounded focus:ring-brand-500 cursor-pointer">
+                <input type="checkbox" id="svc-${s.id}" data-name="${s.name}" data-price="${s.price}" ${checked} onchange="recalculateQuote('${prov.id}')" class="w-4 h-4 text-brand-600 bg-white border-gray-250 rounded focus:ring-brand-500 cursor-pointer">
                 <div class="flex-1 flex justify-between text-[11px]">
                     <span class="text-gray-600 font-medium">${s.name}</span>
-                    <strong class="text-gray-900">$${finalPrice.toFixed(2)}</strong>
+                    <strong class="text-gray-900">$${s.price.toFixed(2)}</strong>
                 </div>
             </label>
         `;

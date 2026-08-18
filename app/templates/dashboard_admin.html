@@ -232,6 +232,19 @@
                         </div>
                     </div>
 
+                    <!-- Servicios Adicionales -->
+                    <div class="border-t border-gray-100 pt-2 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <p class="text-[10px] text-gray-500 font-bold"><i class="fa-solid fa-hand-holding-medical mr-1"></i> Servicios Adicionales y Precios</p>
+                            <button type="button" onclick="addServiceRow()" class="bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200/50 text-[9px] font-bold px-2 py-1 rounded-lg transition-all shadow-sm">
+                                <i class="fa-solid fa-plus mr-0.5"></i> Agregar Servicio
+                            </button>
+                        </div>
+                        <div id="services-container" class="space-y-1.5 max-h-32 overflow-y-auto">
+                            <!-- Filas de servicios ingresadas aquí -->
+                        </div>
+                    </div>
+
                     <!-- Campo Checkbox Premium -->
                     <div class="flex items-center space-x-2 border-t border-gray-100 pt-3">
                         <input type="checkbox" id="prov-premium" class="w-4 h-4 text-brand-600 bg-white border-gray-200 rounded focus:ring-brand-500 focus:ring-2 cursor-pointer">
@@ -1003,6 +1016,17 @@
         async function submitNewProvider(event) {
             event.preventDefault();
             
+            // Recopilar servicios adicionales
+            const services = [];
+            const rows = document.querySelectorAll('#services-container > div');
+            rows.forEach(row => {
+                const name = row.querySelector('.svc-name-input').value.trim();
+                const price = parseFloat(row.querySelector('.svc-price-input').value);
+                if (name && !isNaN(price)) {
+                    services.push({ name, price });
+                }
+            });
+            
             const payload = {
                 nombre_comercial: document.getElementById('prov-nombre').value,
                 ruc_cedula: document.getElementById('prov-ruc').value,
@@ -1018,7 +1042,8 @@
                 link_instagram: document.getElementById('prov-link-instagram').value.trim() || null,
                 link_tiktok: document.getElementById('prov-link-tiktok').value.trim() || null,
                 link_facebook: document.getElementById('prov-link-facebook').value.trim() || null,
-                imagen_url: null
+                imagen_url: null,
+                servicios_adicionales: services
             };
 
             const password = document.getElementById('prov-password').value;
@@ -1109,6 +1134,15 @@
             document.getElementById('prov-link-tiktok').value = p.link_tiktok || "";
             document.getElementById('prov-link-facebook').value = p.link_facebook || "";
             
+            // Cargar servicios adicionales
+            const servicesContainer = document.getElementById('services-container');
+            servicesContainer.innerHTML = '';
+            if (p.servicios_adicionales && Array.isArray(p.servicios_adicionales)) {
+                p.servicios_adicionales.forEach(s => {
+                    addServiceRow(s.name, s.price);
+                });
+            }
+            
             // Mover mapa de Google y marcador
             if (googleMap && googleMarker) {
                 const coords = { lat: parseFloat(p.latitud), lng: parseFloat(p.longitud) };
@@ -1129,6 +1163,7 @@
             
             // Limpiar formulario
             document.getElementById('provider-form').reset();
+            document.getElementById('services-container').innerHTML = '';
             document.getElementById('prov-password').required = true; // Requerida para nuevo
             
             // Resetear mapa a Quito por defecto
@@ -1136,6 +1171,25 @@
             googleMap.setCenter(defaultCoords);
             googleMap.setZoom(13);
             googleMarker.setPosition(defaultCoords);
+        }
+
+        function addServiceRow(name = "", price = "") {
+            const container = document.getElementById('services-container');
+            const rowId = 'svc-row-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+            
+            const div = document.createElement('div');
+            div.id = rowId;
+            div.className = "flex space-x-2 items-center bg-gray-50/50 p-1.5 rounded-lg border border-gray-100";
+            
+            div.innerHTML = `
+                <input type="text" placeholder="Ej: Electrocardiograma" value="${name}" class="flex-1 bg-white border border-gray-200 rounded-lg px-2.5 py-1 text-[11px] text-gray-800 focus:outline-none focus:border-brand-500 svc-name-input" required>
+                <input type="number" step="0.01" placeholder="0.00" value="${price}" class="w-16 bg-white border border-gray-200 rounded-lg px-2 py-1 text-[11px] text-gray-800 focus:outline-none focus:border-brand-500 text-right svc-price-input" required>
+                <button type="button" onclick="document.getElementById('${rowId}').remove()" class="text-red-500 hover:text-red-750 p-1 hover:bg-red-50 rounded transition-colors text-[10px]" title="Eliminar servicio">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            `;
+            
+            container.appendChild(div);
         }
 
         async function loadPatients() {
