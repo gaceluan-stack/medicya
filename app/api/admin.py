@@ -474,3 +474,118 @@ def enviar_whatsapp_masivo(
         "message": f"Mensajes masivos de WhatsApp enviados con éxito a {enviados} pacientes activos.",
         "logs": logs
     }
+
+@router.put("/proveedores/{proveedor_id}", response_model=proveedor_schemas.ProveedorResponse)
+def update_proveedor(
+    proveedor_id: str,
+    prov_in: proveedor_schemas.ProveedorAdminUpdate,
+    current_admin: models.UsuarioSistema = Depends(deps.get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Modifica todos los datos de un proveedor en el sistema.
+    Accesible únicamente por el Administrador. Permite actualizar credenciales, estado, coordenadas y plan.
+    """
+    # 1. Buscar proveedor
+    proveedor = db.query(models.ProveedorServicio).filter(
+        models.ProveedorServicio.id == proveedor_id
+    ).first()
+    if not proveedor:
+        raise HTTPException(
+            status_code=404,
+            detail="Proveedor no encontrado"
+        )
+        
+    usuario = proveedor.usuario
+    if not usuario:
+        raise HTTPException(
+            status_code=404,
+            detail="Usuario del proveedor no encontrado"
+        )
+
+    # 2. Si se cambia el email, verificar unicidad
+    if prov_in.email and prov_in.email != usuario.email:
+        usuario_existente = db.query(models.UsuarioSistema).filter(
+            models.UsuarioSistema.email == prov_in.email
+        ).first()
+        if usuario_existente:
+            raise HTTPException(
+                status_code=400,
+                detail="Ya existe un usuario registrado con el correo electrónico proporcionado"
+            )
+        usuario.email = prov_in.email
+
+    # 3. Si se cambia el RUC, verificar unicidad
+    if prov_in.ruc_cedula and prov_in.ruc_cedula != proveedor.ruc_cedula:
+        proveedor_existente = db.query(models.ProveedorServicio).filter(
+            models.ProveedorServicio.ruc_cedula == prov_in.ruc_cedula
+        ).first()
+        if proveedor_existente:
+            raise HTTPException(
+                status_code=400,
+                detail="Ya existe un proveedor registrado con este RUC/Cédula"
+            )
+        proveedor.ruc_cedula = prov_in.ruc_cedula
+
+    # 4. Si se ingresa contraseña, encriptar y actualizar
+    if prov_in.password:
+        usuario.password_hash = deps.get_password_hash(prov_in.password)
+
+    # 5. Actualizar los demás campos del proveedor
+    if prov_in.nombre_comercial is not None:
+        proveedor.nombre_comercial = prov_in.nombre_comercial
+    if prov_in.categoria is not None:
+        proveedor.categoria = prov_in.categoria
+    if prov_in.especialidad is not None:
+        proveedor.especialidad = prov_in.especialidad
+    if prov_in.latitud is not None:
+        proveedor.latitud = prov_in.latitud
+    if prov_in.longitud is not None:
+        proveedor.longitud = prov_in.longitud
+    if prov_in.precio_consulta is not None:
+        proveedor.precio_consulta = prov_in.precio_consulta
+    if prov_in.es_premium is not None:
+        proveedor.es_premium = prov_in.es_premium
+        # Ajustar membresía fija según plan
+        proveedor.membresia_fija = Decimal("40.00") if prov_in.es_premium else Decimal("25.00")
+    if prov_in.link_tiktok is not None:
+        proveedor.link_tiktok = prov_in.link_tiktok
+    if prov_in.link_instagram is not None:
+        proveedor.link_instagram = prov_in.link_instagram
+    if prov_in.link_facebook is not None:
+        proveedor.link_facebook = prov_in.link_facebook
+    if prov_in.ciudad is not None:
+        proveedor.ciudad = prov_in.ciudad
+        
+    # Calcular sector dinámicamente si cambiaron coordenadas o ciudad
+    from app.services.regions import get_sector_by_coordinates
+    proveedor.sector = get_sector_by_coordinates(proveedor.latitud, proveedor.longitud, proveedor.ciudad)
+
+    db.add(proveedor)
+    db.add(usuario)
+    db.commit()
+    db.refresh(proveedor)
+    
+    # Mapear respuesta
+    return proveedor_schemas.ProveedorResponse(
+        id=proveedor.id,
+        usuario_id=proveedor.usuario_id,
+        ruc_cedula=proveedor.ruc_cedula,
+        nombre_comercial=proveedor.nombre_comercial,
+        categoria=proveedor.categoria,
+        especialidad=proveedor.especialidad,
+        latitud=proveedor.latitud,
+        longitud=proveedor.longitud,
+        precio_consulta=proveedor.precio_consulta,
+        imagen_url=proveedor.imagen_url,
+        membresia_fija=proveedor.membresia_fija,
+        es_premium=proveedor.es_premium,
+        created_at=proveedor.created_at,
+        email=usuario.email,
+        estado=usuario.estado,
+        link_tiktok=proveedor.link_tiktok,
+        link_instagram=proveedor.link_instagram,
+        link_facebook=proveedor.link_facebook,
+        ciudad=proveedor.ciudad,
+        sector=proveedor.sector
+    )

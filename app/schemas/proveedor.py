@@ -53,3 +53,19 @@ class ProveedorRedesUpdate(BaseModel):
     link_tiktok: Optional[str] = None
     link_instagram: Optional[str] = None
     link_facebook: Optional[str] = None
+
+class ProveedorAdminUpdate(BaseModel):
+    nombre_comercial: Optional[str] = Field(None, min_length=2, max_length=150)
+    ruc_cedula: Optional[str] = Field(None, min_length=5, max_length=20)
+    categoria: Optional[CategoriaProveedor] = None
+    especialidad: Optional[str] = None
+    latitud: Optional[float] = None
+    longitud: Optional[float] = None
+    precio_consulta: Optional[Decimal] = Field(None, ge=0)
+    es_premium: Optional[bool] = None
+    link_tiktok: Optional[str] = None
+    link_instagram: Optional[str] = None
+    link_facebook: Optional[str] = None
+    ciudad: Optional[str] = Field(None, min_length=2, max_length=100)
+    email: Optional[EmailStr] = None
+    password: Optional[str] = None

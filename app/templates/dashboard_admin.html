@@ -117,10 +117,11 @@
             <!-- Left: Add Provider Form -->
             <div class="glassmorphism rounded-2xl p-6 shadow-sm">
                 <h3 class="font-bold text-gray-900 flex items-center mb-5 border-b border-gray-100 pb-3">
-                    <i class="fa-solid fa-user-doctor text-brand-500 mr-2"></i> Alta de Nuevo Proveedor
+                    <span id="form-title-text" class="flex items-center"><i class="fa-solid fa-user-doctor text-brand-500 mr-2"></i> Alta de Nuevo Proveedor</span>
+                    <button type="button" id="cancel-edit-btn" onclick="cancelEdit()" class="hidden text-red-500 hover:text-red-750 font-bold ml-auto text-[10px] bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded-lg border border-red-200 transition-colors">Cancelar</button>
                 </h3>
                 
-                <form onsubmit="submitNewProvider(event)" class="space-y-4 text-xs">
+                <form id="provider-form" onsubmit="submitNewProvider(event)" class="space-y-4 text-xs">
                     <div>
                         <label class="block text-gray-400 font-semibold mb-1">Nombre Comercial / Profesional</label>
                         <input type="text" id="prov-nombre" required class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-brand-500 placeholder-gray-400" placeholder="Dr. Carlos Andrade">
@@ -236,7 +237,7 @@
                     </div>
 
                     <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 rounded-xl text-xs transition-all shadow shadow-brand-500/10 mt-3">
-                        Guardar Médico / Centro de Salud
+                        <span id="submit-btn-text">Guardar Médico / Centro de Salud</span>
                     </button>
                 </form>
             </div>
@@ -751,6 +752,7 @@
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const provs = await provsResponse.json();
+                allProviders = provs; // Guardar globalmente para editar
                 
                 const tbody = document.getElementById('providers-table-body');
                 if (provs.length === 0) {
@@ -780,10 +782,13 @@
                                     <span class="px-2 py-0.5 rounded border text-[10px] font-bold ${badgeColor}">${p.estado}</span>
                                 </td>
                                 <td class="py-3 flex space-x-1">
+                                    <button onclick="editProvider('${p.id}')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-1.5 rounded text-[10px] transition-colors" title="Editar Datos">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </button>
                                     <button onclick="toggleEstado('${p.id}', 'ACTIVO')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-1 px-1.5 rounded text-[10px] transition-colors" title="Activar">
                                         <i class="fa-solid fa-check"></i>
                                     </button>
-                                    <button onclick="toggleEstado('${p.id}', 'BLOQUEADO')" class="bg-red-600 hover:bg-red-700 text-white font-medium py-1 px-1.5 rounded text-[10px] transition-colors" title="Bloquear">
+                                    <button onclick="toggleEstado('${p.id}', 'BLOQUEADO')" class="bg-red-600 hover:bg-red-700 text-white font-medium py-1 px-1.5 rounded text-[10px] transition-colors" title="Bloquear / Suspender">
                                         <i class="fa-solid fa-lock"></i>
                                     </button>
                                 </td>
@@ -963,7 +968,6 @@
                 latitud: parseFloat(document.getElementById('prov-lat').value),
                 longitud: parseFloat(document.getElementById('prov-lng').value),
                 email: document.getElementById('prov-email').value,
-                password: document.getElementById('prov-password').value,
                 es_premium: document.getElementById('prov-premium').checked,
                 ciudad: document.getElementById('prov-ciudad').value,
                 link_instagram: document.getElementById('prov-link-instagram').value.trim() || null,
@@ -972,25 +976,113 @@
                 imagen_url: null
             };
 
+            const password = document.getElementById('prov-password').value;
+            if (password) {
+                payload.password = password;
+            }
+
             try {
-                const response = await fetch('/api/admin/proveedores', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify(payload)
-                });
+                let response;
+                if (editingProviderId !== null) {
+                    // Modo Edición: PUT a /api/admin/proveedores/{id}
+                    response = await fetch(`/api/admin/proveedores/${editingProviderId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                } else {
+                    // Modo Creación: POST a /api/admin/proveedores
+                    if (!password) {
+                        alert("Por favor, ingresa una contraseña para el nuevo proveedor.");
+                        return;
+                    }
+                    response = await fetch('/api/admin/proveedores', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                }
                 
                 const data = await response.json();
-                if (!response.ok) throw new Error(data.detail || "Error al registrar proveedor");
+                if (!response.ok) throw new Error(data.detail || "Error al registrar/guardar proveedor");
                 
-                alert("¡Proveedor creado exitosamente!");
-                event.target.reset();
+                if (editingProviderId !== null) {
+                    alert("¡Proveedor actualizado exitosamente!");
+                    cancelEdit();
+                } else {
+                    alert("¡Proveedor creado exitosamente!");
+                    event.target.reset();
+                }
                 loadData();
             } catch (err) {
                 alert(err.message);
             }
+        }
+
+        let editingProviderId = null;
+        let allProviders = [];
+
+        function editProvider(id) {
+            const p = allProviders.find(item => item.id === id);
+            if (!p) return;
+            
+            editingProviderId = id;
+            
+            // Cambiar título de formulario
+            document.getElementById('form-title-text').innerHTML = `<i class="fa-solid fa-user-pen text-blue-500 mr-2"></i> Editar Proveedor`;
+            document.getElementById('submit-btn-text').textContent = "Guardar Cambios";
+            document.getElementById('cancel-edit-btn').classList.remove('hidden');
+            
+            // Llenar campos
+            document.getElementById('prov-nombre').value = p.nombre_comercial || "";
+            document.getElementById('prov-ruc').value = p.ruc_cedula || "";
+            document.getElementById('prov-especialidad').value = p.especialidad || "";
+            document.getElementById('prov-categoria').value = p.categoria || "Doctores";
+            document.getElementById('prov-precio').value = p.precio_consulta || "";
+            document.getElementById('prov-lat').value = p.latitud || "";
+            document.getElementById('prov-lng').value = p.longitud || "";
+            document.getElementById('prov-email').value = p.email || "";
+            document.getElementById('prov-password').value = ""; // Opcional para cambio
+            document.getElementById('prov-password').required = false; // No requerida en edición
+            document.getElementById('prov-premium').checked = p.es_premium || false;
+            document.getElementById('prov-ciudad').value = p.ciudad || "Quito";
+            document.getElementById('prov-link-instagram').value = p.link_instagram || "";
+            document.getElementById('prov-link-tiktok').value = p.link_tiktok || "";
+            document.getElementById('prov-link-facebook').value = p.link_facebook || "";
+            
+            // Mover mapa de Google y marcador
+            if (googleMap && googleMarker) {
+                const coords = { lat: parseFloat(p.latitud), lng: parseFloat(p.longitud) };
+                googleMap.setCenter(coords);
+                googleMap.setZoom(15);
+                googleMarker.setPosition(coords);
+            }
+            
+            // Deslizar suavemente al formulario
+            document.getElementById('form-title-text').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function cancelEdit() {
+            editingProviderId = null;
+            document.getElementById('form-title-text').innerHTML = `<i class="fa-solid fa-user-doctor text-brand-500 mr-2"></i> Alta de Nuevo Proveedor`;
+            document.getElementById('submit-btn-text').textContent = "Guardar Médico / Centro de Salud";
+            document.getElementById('cancel-edit-btn').classList.add('hidden');
+            
+            // Limpiar formulario
+            document.getElementById('provider-form').reset();
+            document.getElementById('prov-password').required = true; // Requerida para nuevo
+            
+            // Resetear mapa a Quito por defecto
+            const defaultCoords = { lat: -0.180653, lng: -78.467834 };
+            googleMap.setCenter(defaultCoords);
+            googleMap.setZoom(13);
+            googleMarker.setPosition(defaultCoords);
         }
 
         async function loadPatients() {
