@@ -44,6 +44,7 @@ def get_proveedores_mapa(
                 usuario_id=prov.usuario_id,
                 ruc_cedula=prov.ruc_cedula,
                 nombre_comercial=prov.nombre_comercial,
+                celular_whatsapp=prov.celular_whatsapp,
                 categoria=prov.categoria,
                 especialidad=prov.especialidad,
                 latitud=prov.latitud,

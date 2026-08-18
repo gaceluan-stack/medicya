@@ -73,7 +73,8 @@ def create_proveedor(
         link_instagram=prov_in.link_instagram,
         link_facebook=prov_in.link_facebook,
         ciudad=prov_in.ciudad,
-        sector=sector_auto
+        sector=sector_auto,
+        servicios_adicionales=prov_in.servicios_adicionales
     )
     db.add(nuevo_proveedor)
     db.commit()
@@ -100,7 +101,8 @@ def create_proveedor(
         link_instagram=nuevo_proveedor.link_instagram,
         link_facebook=nuevo_proveedor.link_facebook,
         ciudad=nuevo_proveedor.ciudad,
-        sector=nuevo_proveedor.sector
+        sector=nuevo_proveedor.sector,
+        servicios_adicionales=nuevo_proveedor.servicios_adicionales
     )
 
 @router.get("/atribucion", response_model=List[billing_schemas.ReporteAtribucion])
@@ -185,7 +187,8 @@ def list_proveedores_admin(
                 link_instagram=prov.link_instagram,
                 link_facebook=prov.link_facebook,
                 ciudad=prov.ciudad,
-                sector=prov.sector
+                sector=prov.sector,
+                servicios_adicionales=prov.servicios_adicionales
             )
         )
     return result
@@ -560,7 +563,9 @@ def update_proveedor(
         proveedor.link_facebook = prov_in.link_facebook
     if prov_in.ciudad is not None:
         proveedor.ciudad = prov_in.ciudad
-        
+    if prov_in.servicios_adicionales is not None:
+        proveedor.servicios_adicionales = prov_in.servicios_adicionales
+         
     # Calcular sector dinámicamente si cambiaron coordenadas o ciudad
     from app.services.sector_classifier import classify_location
     _, sector_auto = classify_location(proveedor.latitud, proveedor.longitud)
@@ -593,5 +598,6 @@ def update_proveedor(
         link_instagram=proveedor.link_instagram,
         link_facebook=proveedor.link_facebook,
         ciudad=proveedor.ciudad,
-        sector=proveedor.sector
+        sector=proveedor.sector,
+        servicios_adicionales=proveedor.servicios_adicionales
     )

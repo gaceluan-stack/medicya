@@ -1,7 +1,7 @@
 from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional
+from typing import Optional, List
 from app.db.models import CategoriaProveedor, EstadoUsuario
 
 class ProveedorCreate(BaseModel):
@@ -23,6 +23,7 @@ class ProveedorCreate(BaseModel):
     link_facebook: Optional[str] = None
     ciudad: Optional[str] = Field(default="Quito", min_length=2, max_length=100)
     sector: Optional[str] = None
+    servicios_adicionales: Optional[List[dict]] = None
 
 class ProveedorResponse(BaseModel):
     id: str
@@ -46,6 +47,7 @@ class ProveedorResponse(BaseModel):
     link_facebook: Optional[str] = None
     ciudad: Optional[str] = None
     sector: Optional[str] = None
+    servicios_adicionales: Optional[List[dict]] = None
 
     class Config:
         from_attributes = True
@@ -72,3 +74,4 @@ class ProveedorAdminUpdate(BaseModel):
     ciudad: Optional[str] = Field(None, min_length=2, max_length=100)
     email: Optional[EmailStr] = None
     password: Optional[str] = None
+    servicios_adicionales: Optional[List[dict]] = None

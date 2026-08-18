@@ -11,7 +11,8 @@ from sqlalchemy import (
     Date,
     Integer,
     ForeignKey,
-    Enum as SQLEnum
+    Enum as SQLEnum,
+    JSON
 )
 from sqlalchemy.orm import relationship, backref
 from app.db.database import Base
@@ -121,6 +122,7 @@ class ProveedorServicio(Base):
     ciudad = Column(String(100), nullable=True)
     sector = Column(String(100), nullable=True)
     celular_whatsapp = Column(String(20), nullable=True)
+    servicios_adicionales = Column(JSON, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relaciones
