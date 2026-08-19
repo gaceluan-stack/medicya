@@ -8,6 +8,7 @@ from app.db import models
 from app.schemas import proveedor as proveedor_schemas
 from app.schemas import billing as billing_schemas
 from app.api import deps
+from app.services.phone_formatter import format_ecuador_whatsapp
 
 router = APIRouter(prefix="/admin", tags=["Administración"])
 
@@ -60,7 +61,7 @@ def create_proveedor(
         usuario_id=nuevo_usuario.id,
         ruc_cedula=prov_in.ruc_cedula,
         nombre_comercial=prov_in.nombre_comercial,
-        celular_whatsapp=prov_in.celular_whatsapp,
+        celular_whatsapp=format_ecuador_whatsapp(prov_in.celular_whatsapp),
         categoria=prov_in.categoria,
         especialidad=prov_in.especialidad,
         latitud=prov_in.latitud,
@@ -541,7 +542,7 @@ def update_proveedor(
     if prov_in.nombre_comercial is not None:
         proveedor.nombre_comercial = prov_in.nombre_comercial
     if prov_in.celular_whatsapp is not None:
-        proveedor.celular_whatsapp = prov_in.celular_whatsapp
+        proveedor.celular_whatsapp = format_ecuador_whatsapp(prov_in.celular_whatsapp)
     if prov_in.categoria is not None:
         proveedor.categoria = prov_in.categoria
     if prov_in.especialidad is not None:

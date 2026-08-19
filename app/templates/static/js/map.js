@@ -8,6 +8,34 @@ let loadedProviders = {}; // Guardar los objetos de proveedores para el cotizado
 let allProvidersData = []; // Guardar todos los proveedores para los filtros avanzados
 let activeMobileView = 'list'; // 'list' o 'map' en móvil
 
+// Formatear números de teléfono de Ecuador para WhatsApp
+function formatEcuadorWhatsApp(phone) {
+    if (!phone) return '593987654321';
+    let clean = phone.replace(/[^0-9]/g, '');
+    if (clean.startsWith('00')) {
+        clean = clean.substring(2);
+    }
+    if (clean.startsWith('09') && clean.length === 10) {
+        return '593' + clean.substring(1);
+    }
+    if (clean.startsWith('9') && clean.length === 9) {
+        return '593' + clean;
+    }
+    if (clean.startsWith('59309') && clean.length === 13) {
+        return '5939' + clean.substring(5);
+    }
+    if (clean.startsWith('593') && clean.length === 12) {
+        return clean;
+    }
+    if (clean.length === 10 && clean.startsWith('0')) {
+        return '593' + clean.substring(1);
+    }
+    if (clean.length === 9) {
+        return '593' + clean;
+    }
+    return clean;
+}
+
 // Servicios predefinidos por categoría
 const CATEGORY_SERVICES = {
     'Doctores': [
@@ -363,7 +391,7 @@ function applyAdvancedFilters() {
                 </div>
             `;
         } else if (prov.es_premium) {
-            const cleanWa = (prov.celular_whatsapp || '593987654321').replace(/[^0-9]/g, '');
+            const cleanWa = formatEcuadorWhatsApp(prov.celular_whatsapp);
             listSocialHtml = `
                 <div class="flex space-x-2 pt-2 border-t border-gray-100 justify-start mt-1">
                     ${prov.link_instagram ? `<a href="${prov.link_instagram}" target="_blank" onclick="event.stopPropagation();" class="w-7 h-7 rounded-full bg-teal-50 border border-teal-200 hover:bg-teal-100 text-teal-600 hover:text-teal-800 flex items-center justify-center transition-all" title="Instagram"><i class="fa-brands fa-instagram text-xs"></i></a>` : ''}
@@ -430,7 +458,7 @@ async function contactProviderWithQuote(id, name, phone, quoteMessage) {
         alert(`¡Cotización registrada en Medic YA!\nTe redirigiremos a WhatsApp.`);
         
         // Redirigir a WhatsApp con el texto codificado (usando window.location.href para evitar bloqueadores de popups en iPhone/Safari)
-        const cleanPhone = (phone || '593987654321').replace(/[^0-9]/g, '');
+        const cleanPhone = formatEcuadorWhatsApp(phone);
         window.location.href = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(quoteMessage)}`;
         
     } catch(err) {

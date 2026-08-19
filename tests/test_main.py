@@ -897,3 +897,25 @@ def test_admin_marketing_masivo_con_adjuntos():
     assert "WhatsApp" in res_wa.json()["message"]
     assert len(res_wa.json()["logs"]) > 0
 
+def test_ecuador_whatsapp_formatting():
+    from app.services.phone_formatter import format_ecuador_whatsapp
+    
+    # Caso 1: Formato local '0984183790'
+    assert format_ecuador_whatsapp("0984183790") == "+593984183790"
+    
+    # Caso 2: Formato local sin cero '984183790'
+    assert format_ecuador_whatsapp("984183790") == "+593984183790"
+    
+    # Caso 3: Formato incorrecto con cero intermedio '5930984183790'
+    assert format_ecuador_whatsapp("5930984183790") == "+593984183790"
+    
+    # Caso 4: Formato con espacios y caracteres especiales
+    assert format_ecuador_whatsapp("+593 98 418 3790") == "+593984183790"
+    
+    # Caso 5: Formato correcto
+    assert format_ecuador_whatsapp("+593984183790") == "+593984183790"
+    
+    # Caso 6: Formato con doble cero
+    assert format_ecuador_whatsapp("00593984183790") == "+593984183790"
+
+

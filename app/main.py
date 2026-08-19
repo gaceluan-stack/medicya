@@ -71,6 +71,24 @@ try:
 except Exception as e:
     print("Error auto-clasificando proveedores:", e)
 
+# Auto-formatear números de WhatsApp de proveedores existentes
+try:
+    from app.db.database import SessionLocal
+    from app.db import models
+    from app.services.phone_formatter import format_ecuador_whatsapp
+    db = SessionLocal()
+    proveedores_list = db.query(models.ProveedorServicio).all()
+    for p in proveedores_list:
+        if p.celular_whatsapp:
+            formatted = format_ecuador_whatsapp(p.celular_whatsapp)
+            if p.celular_whatsapp != formatted:
+                print(f"Formateando teléfono de {p.nombre_comercial}: {p.celular_whatsapp} -> {formatted}")
+                p.celular_whatsapp = formatted
+    db.commit()
+    db.close()
+except Exception as e:
+    print("Error formateando teléfonos de proveedores existentes:", e)
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     description="Backend API y PWA para conectar pacientes con profesionales de la salud",
