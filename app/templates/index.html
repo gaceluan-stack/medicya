@@ -96,8 +96,15 @@
         </div>
         
         <!-- User Status / Actions -->
-        <div id="nav-user-container" class="flex items-center space-x-4">
-            <!-- Cargado dinámicamente -->
+        <div class="flex items-center space-x-3">
+            <!-- PWA Install Button -->
+            <button id="pwa-install-btn" class="hidden text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 px-3 py-1.5 rounded-xl transition-all items-center space-x-1.5 shadow-sm">
+                <i class="fa-solid fa-download"></i> <span>Descargar App</span>
+            </button>
+            
+            <div id="nav-user-container" class="flex items-center space-x-4">
+                <!-- Cargado dinámicamente -->
+            </div>
         </div>
     </header>
 
@@ -573,8 +580,115 @@
         </button>
     </div>
 
+    <!-- Modal de Instrucciones de Instalación iOS (PWA) -->
+    <div id="ios-install-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl border border-gray-150 animate-fade-in relative">
+            <button onclick="closeIosInstallModal()" class="absolute top-5 right-5 text-gray-400 hover:text-gray-850 transition-colors">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            
+            <div class="text-center space-y-2">
+                <div class="w-12 h-12 bg-teal-50 text-brand-600 rounded-full flex items-center justify-center mx-auto text-xl shadow-inner">
+                    <i class="fa-solid fa-mobile-screen-button"></i>
+                </div>
+                <h3 class="text-base font-bold text-gray-900">Instalar Medic YA en tu iPhone</h3>
+                <p class="text-[10px] text-gray-550 leading-relaxed">Sigue estos sencillos pasos para agregar Medic YA a tu pantalla de inicio y usarla sin entrar al navegador:</p>
+            </div>
+            
+            <div class="space-y-3 pt-2 text-xs text-gray-700">
+                <div class="flex items-start space-x-3 bg-gray-50 p-3 rounded-xl border border-gray-100">
+                    <span class="w-5 h-5 bg-brand-600 text-white rounded-full flex items-center justify-center font-bold text-[10px] flex-shrink-0">1</span>
+                    <p class="leading-relaxed">Presiona el botón de <strong>Compartir</strong> <i class="fa-solid fa-share-from-square text-brand-650 mx-1"></i> en la barra inferior de Safari.</p>
+                </div>
+                <div class="flex items-start space-x-3 bg-gray-50 p-3 rounded-xl border border-gray-100">
+                    <span class="w-5 h-5 bg-brand-600 text-white rounded-full flex items-center justify-center font-bold text-[10px] flex-shrink-0">2</span>
+                    <p class="leading-relaxed">Desliza la lista hacia abajo y selecciona <strong>Agregar a Inicio</strong> <i class="fa-solid fa-square-plus text-brand-650 mx-1"></i>.</p>
+                </div>
+                <div class="flex items-start space-x-3 bg-gray-50 p-3 rounded-xl border border-gray-100">
+                    <span class="w-5 h-5 bg-brand-600 text-white rounded-full flex items-center justify-center font-bold text-[10px] flex-shrink-0">3</span>
+                    <p class="leading-relaxed">Confirma presionando <strong>Agregar</strong> en la esquina superior derecha.</p>
+                </div>
+            </div>
+            
+            <button onclick="closeIosInstallModal()" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 rounded-xl text-xs transition-colors shadow">
+                Entendido
+            </button>
+        </div>
+    </div>
+
     <!-- Frontend JS logic -->
     <script src="/static/js/map.js?v=1.0.8"></script>
     <script src="/static/js/main.js?v=1.0.8"></script>
+
+    <!-- PWA Install & Service Worker Logic -->
+    <script>
+        // Registrar Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/static/sw.js')
+                    .then(reg => console.log('Service Worker registrado con éxito:', reg.scope))
+                    .catch(err => console.error('Fallo al registrar el Service Worker:', err));
+            });
+        }
+
+        // Manejar prompt de instalación PWA
+        let deferredPrompt;
+        const installBtn = document.getElementById('pwa-install-btn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            if (installBtn) {
+                installBtn.classList.remove('hidden');
+                installBtn.classList.add('flex');
+            }
+        });
+
+        if (installBtn) {
+            installBtn.addEventListener('click', async () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    console.log(`PWA elección: ${outcome}`);
+                    deferredPrompt = null;
+                    installBtn.classList.remove('flex');
+                    installBtn.classList.add('hidden');
+                } else {
+                    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                    if (isIOS) {
+                        openIosInstallModal();
+                    } else {
+                        alert("Para instalar la aplicación, haz clic en el icono de instalación que aparece en la barra de direcciones de tu navegador.");
+                    }
+                }
+            });
+        }
+
+        window.addEventListener('appinstalled', () => {
+            console.log('PWA instalada correctamente.');
+            if (installBtn) {
+                installBtn.classList.remove('flex');
+                installBtn.classList.add('hidden');
+            }
+        });
+
+        // Mostrar botón en iOS si no está en modo standalone
+        function checkIosPwaButton() {
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+            if (isIOS && !isStandalone && installBtn) {
+                installBtn.classList.remove('hidden');
+                installBtn.classList.add('flex');
+            }
+        }
+        checkIosPwaButton();
+
+        function openIosInstallModal() {
+            document.getElementById('ios-install-modal').classList.remove('hidden');
+        }
+        function closeIosInstallModal() {
+            document.getElementById('ios-install-modal').classList.add('hidden');
+        }
+    </script>
 </body>
 </html>
