@@ -213,9 +213,9 @@ function getProviderDefaultImage(prov) {
 
 // Cargar y pintar los proveedores en el mapa y en la lista lateral
 async function loadProviders() {
-    let url = '/api/proveedores/mapa';
+    let url = '/api/proveedores/mapa?_t=' + Date.now();
     if (currentCategory) {
-        url += `?categoria=${encodeURIComponent(currentCategory)}`;
+        url += `&categoria=${encodeURIComponent(currentCategory)}`;
     }
     
     try {
