@@ -6,6 +6,7 @@ let currentCategory = null;
 let userCoords = [-0.180653, -78.467834]; // Quito default
 let loadedProviders = {}; // Guardar los objetos de proveedores para el cotizador
 let allProvidersData = []; // Guardar todos los proveedores para los filtros avanzados
+let activeMobileView = 'list'; // 'list' o 'map' en móvil
 
 // Servicios predefinidos por categoría
 const CATEGORY_SERVICES = {
@@ -466,6 +467,11 @@ function filterCategory(category) {
 // --- COTIZADOR DE SERVICIOS Y PANEL DETALLADO (GOOGLE MAPS STYLE) ---
 
 function selectProviderForRouting(id) {
+    // Si estamos en móvil y en vista de mapa, regresar a la vista de lista/detalle automáticamente
+    if (window.innerWidth < 768 && activeMobileView === 'map') {
+        toggleMobileView();
+    }
+    
     const token = localStorage.getItem('token');
     if (!token) {
         alert("Favor inicie sesión para que conozca todas nuestras promociones o regístrese y obtenga un cupón de descuento para cualquier servicio de nuestros médicos especialistas.");
@@ -637,4 +643,36 @@ function goBackToList() {
     document.getElementById('sidebar-main-content').classList.remove('hidden');
     document.getElementById('sidebar-detail-content').classList.add('hidden');
     map.setView(userCoords, 14);
+}
+
+function toggleMobileView() {
+    const aside = document.querySelector('aside');
+    const mapSec = document.getElementById('map');
+    const btn = document.getElementById('mobile-toggle-btn');
+    
+    if (activeMobileView === 'list') {
+        activeMobileView = 'map';
+        aside.classList.add('hidden');
+        aside.classList.remove('flex');
+        
+        mapSec.classList.remove('hidden');
+        mapSec.classList.add('flex');
+        
+        if (map) {
+            setTimeout(() => {
+                map.invalidateSize();
+            }, 100);
+        }
+        
+        btn.innerHTML = `<i class="fa-solid fa-list"></i> <span>Ver Lista</span>`;
+    } else {
+        activeMobileView = 'list';
+        aside.classList.remove('hidden');
+        aside.classList.add('flex');
+        
+        mapSec.classList.add('hidden');
+        mapSec.classList.remove('flex');
+        
+        btn.innerHTML = `<i class="fa-solid fa-map-location-dot"></i> <span>Ver Mapa</span>`;
+    }
 }
