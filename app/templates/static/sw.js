@@ -1,8 +1,9 @@
-const CACHE_NAME = 'medic-ya-cache-v1';
+const CACHE_NAME = 'medic-ya-cache-v2';
 const ASSETS = [
   '/',
   '/login',
   '/static/manifest.json',
+  '/static/pwa_icon.jpg',
   '/static/js/map.js',
   '/static/js/main.js',
   'https://cdn.tailwindcss.com',
