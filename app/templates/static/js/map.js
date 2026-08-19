@@ -338,8 +338,7 @@ function applyAdvancedFilters() {
                 
                 <div class="space-y-1 text-[10px] text-gray-600 border-t border-b border-gray-100 py-2 ${blurClass}">
                     <p class="flex items-center"><i class="fa-solid fa-location-dot text-brand-500 mr-2 flex-shrink-0 w-3.5 text-center"></i> ${[prov.ciudad, prov.sector].filter(Boolean).join(', ') || 'Ubicación no especificada'}</p>
-                    <p class="flex items-center font-bold text-gray-800"><i class="fa-solid fa-circle-check text-emerald-500 mr-2 flex-shrink-0 w-3.5 text-center"></i> Consulta Presencial: $${parseFloat(prov.precio_consulta).toFixed(2)}</p>
-                    <p class="flex items-center text-gray-500"><i class="fa-solid fa-video text-brand-500 mr-2 flex-shrink-0 w-3.5 text-center"></i> Consulta Online: $${(parseFloat(prov.precio_consulta) * 0.8).toFixed(2)}</p>
+                    <p class="flex items-center font-bold text-gray-800"><i class="fa-solid fa-circle-check text-emerald-500 mr-2 flex-shrink-0 w-3.5 text-center"></i> Valor Consulta: $${parseFloat(prov.precio_consulta).toFixed(2)}</p>
                 </div>
                 
                 <div class="flex items-center justify-between mt-1">
