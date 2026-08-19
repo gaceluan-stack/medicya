@@ -430,9 +430,9 @@ async function contactProviderWithQuote(id, name, phone, quoteMessage) {
         
         alert(`¡Cotización registrada en Medic YA!\nTe redirigiremos a WhatsApp.`);
         
-        // Redirigir a WhatsApp con el texto codificado
+        // Redirigir a WhatsApp con el texto codificado (usando window.location.href para evitar bloqueadores de popups en iPhone/Safari)
         const cleanPhone = (phone || '593987654321').replace(/[^0-9]/g, '');
-        window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(quoteMessage)}`, '_blank');
+        window.location.href = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(quoteMessage)}`;
         
     } catch(err) {
         alert(err.message);

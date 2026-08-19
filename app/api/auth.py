@@ -3,7 +3,7 @@ import random
 import os
 from datetime import datetime, timedelta
 from pydantic import BaseModel
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from app.db.database import get_db
@@ -69,6 +69,7 @@ class PacienteLogin(BaseModel):
 @router.post("/register-paciente", response_model=auth_schemas.Token)
 def register_paciente(
     paciente_in: paciente_schemas.PacienteCreate,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db)
 ):
     """
@@ -174,6 +175,52 @@ def register_paciente(
     db.add(nuevo_cupon)
     db.commit()
     
+    # 4c. Enviar el cupón de bienvenida por correo y WhatsApp en segundo plano
+    try:
+        from app.services.email import send_email_notification
+        subject = "¡Bienvenido a Medic YA! Tu Cupón de Regalo de $5 USD"
+        body = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; color: #333333; line-height: 1.6;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+                <div style="text-align: center; border-bottom: 2px solid #0d9488; padding-bottom: 15px; margin-bottom: 20px;">
+                    <h1 style="color: #0d9488; margin: 0;">Medic YA</h1>
+                    <p style="font-size: 14px; color: #718096; margin: 5px 0 0 0;">Salud al alcance de un clic</p>
+                </div>
+                
+                <h2 style="color: #2d3748; margin-top: 0;">¡Hola {nuevo_paciente.nombres}!</h2>
+                <p>Te damos una cálida bienvenida a <strong>Medic YA</strong>. Tu cuenta de paciente ha sido registrada con éxito.</p>
+                
+                <div style="background-color: #f0fdfa; border: 1px dashed #0d9488; padding: 20px; border-radius: 8px; text-align: center; margin: 25px 0;">
+                    <span style="font-size: 12px; font-weight: bold; text-transform: uppercase; color: #0d9488; letter-spacing: 0.05em; display: block; margin-bottom: 8px;">CUPÓN DE REGALO DE BIENVENIDA</span>
+                    <strong style="font-size: 28px; color: #115e59; display: block; margin-bottom: 10px;">$5.00 USD</strong>
+                    <p style="font-size: 14px; font-weight: bold; color: #2d3748; margin: 0;">CÓDIGO: <span style="font-family: monospace; background-color: #ffffff; padding: 4px 8px; border-radius: 4px; border: 1px solid #cbd5e0; letter-spacing: 1px;">{welcome_code}</span></p>
+                </div>
+                
+                <p>Puedes ingresar este código en la sección de <strong>Canjear Código</strong> de tu billetera dentro de la aplicación, o presentarlo directamente a tu médico especialista al ser atendido.</p>
+                
+                <p style="margin-bottom: 0;">¡Gracias por confiar en nosotros para cuidar de tu salud!</p>
+                <p style="margin-top: 5px; color: #718096; font-size: 14px;">El equipo de Medic YA</p>
+            </div>
+        </body>
+        </html>
+        """
+        background_tasks.add_task(send_email_notification, nuevo_usuario.email, subject, body)
+    except Exception as e:
+        print("Error al programar correo de bienvenida:", e)
+
+    try:
+        from app.services.whatsapp import send_whatsapp_notification
+        background_tasks.add_task(
+            send_whatsapp_notification,
+            nuevo_paciente.celular_whatsapp,
+            nuevo_paciente.nombres,
+            "¡Te damos la bienvenida a Medic YA!",
+            f"Tu cupón de $5 USD es: {welcome_code}"
+        )
+    except Exception as e:
+        print("Error al programar WhatsApp de bienvenida:", e)
+
     # 5. Generar token de acceso
     access_token = deps.create_access_token(
         data={"sub": nuevo_usuario.email, "role": nuevo_usuario.rol.value}
