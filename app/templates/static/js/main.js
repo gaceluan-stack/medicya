@@ -66,9 +66,6 @@ function updateUserNavUI() {
             <button onclick="openRegisterModal()" class="bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold px-4.5 py-2.5 rounded-xl transition-all shadow shadow-brand-500/10">
                 <i class="fa-solid fa-user-plus mr-1.5"></i> Registro Rápido
             </button>
-            <a href="/login" class="text-xs text-gray-500 hover:text-gray-900 font-bold py-2 transition-all">
-                Ingreso Doctores
-            </a>
         `;
         if (b2cPanel) b2cPanel.classList.add('hidden');
     }
