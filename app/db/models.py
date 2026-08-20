@@ -132,6 +132,8 @@ class ProveedorServicio(Base):
     campanas = relationship("CampanaDescuento", back_populates="proveedor", cascade="all, delete-orphan")
     resenas = relationship("Resena", back_populates="proveedor", cascade="all, delete-orphan")
     cupones_redimidos = relationship("Cupon", back_populates="proveedor_redencion")
+    configuracion_agenda = relationship("ConfiguracionAgendaProveedor", back_populates="proveedor", uselist=False, cascade="all, delete-orphan")
+    citas = relationship("CitaProveedor", back_populates="proveedor", cascade="all, delete-orphan")
 
 
 class EventoClicBilling(Base):
@@ -242,3 +244,35 @@ class CodigoVerificacion(Base):
     expira_at = Column(DateTime, nullable=False)
     usado = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class ConfiguracionAgendaProveedor(Base):
+    __tablename__ = "configuracion_agenda_proveedores"
+    
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    proveedor_id = Column(String(36), ForeignKey("proveedores_servicio.id", ondelete="CASCADE"), unique=True, nullable=False, index=True)
+    horarios_disponibilidad = Column(JSON, nullable=True) # e.g. {"lunes": ["08:00", "17:00"], "martes": ["08:00", "17:00"], ...}
+    duracion_turno = Column(Integer, default=30) # en minutos
+    respuesta_automatica = Column(String(1000), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relaciones
+    proveedor = relationship("ProveedorServicio", back_populates="configuracion_agenda")
+
+
+class CitaProveedor(Base):
+    __tablename__ = "citas_proveedores"
+    
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    proveedor_id = Column(String(36), ForeignKey("proveedores_servicio.id", ondelete="CASCADE"), nullable=False, index=True)
+    paciente_id = Column(String(36), ForeignKey("pacientes.id", ondelete="SET NULL"), nullable=True, index=True)
+    paciente_nombre = Column(String(150), nullable=False) # Nombre completo del paciente o asunto del bloqueo
+    fecha = Column(String(10), nullable=False) # Formato YYYY-MM-DD
+    hora_inicio = Column(String(5), nullable=False) # Formato HH:MM
+    hora_fin = Column(String(5), nullable=False) # Formato HH:MM
+    estado = Column(String(50), default="RESERVADA") # RESERVADA, BLOQUEADA
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relaciones
+    proveedor = relationship("ProveedorServicio", back_populates="citas")
+    paciente = relationship("Paciente")

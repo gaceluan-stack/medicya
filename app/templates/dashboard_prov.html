@@ -332,6 +332,101 @@
             </div>
             
         </section>
+
+        <!-- Row 2: Agenda & Calendario (Google Calendar Style) -->
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-6">
+            <!-- Left: Interactive Calendar (2 cols) -->
+            <div class="lg:col-span-2 glassmorphism rounded-2xl p-6 relative flex flex-col min-h-[500px] shadow-sm overflow-hidden" id="agenda-box">
+                <div class="flex justify-between items-center mb-5">
+                    <h3 class="font-bold text-gray-900 flex items-center">
+                        <i class="fa-solid fa-calendar-days text-brand-500 mr-2"></i> Mi Agenda y Calendario Profesional
+                    </h3>
+                    
+                    <!-- Date Selector -->
+                    <div class="flex items-center space-x-2">
+                        <input type="date" id="agenda-date" class="bg-white border border-gray-250 rounded-xl px-3 py-1.5 text-xs text-gray-800 focus:outline-none focus:border-brand-500 font-medium" onchange="loadAgenda()">
+                    </div>
+                </div>
+
+                <!-- Calendar Schedule Slots Grid -->
+                <div class="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <!-- Configuración de Horarios y Auto-respuesta -->
+                    <div class="md:col-span-1 bg-gray-50 border border-gray-150 rounded-xl p-4 space-y-4 text-xs">
+                        <h4 class="font-bold text-gray-850 border-b border-gray-200 pb-2 flex items-center"><i class="fa-solid fa-gears text-brand-500 mr-1.5"></i> Ajustes</h4>
+                        
+                        <!-- Duración de Turno -->
+                        <div>
+                            <label class="block text-gray-400 font-semibold mb-1">Duración por Turno:</label>
+                            <select id="agenda-duracion" class="w-full bg-white border border-gray-200 rounded-xl px-2.5 py-1.5 focus:outline-none focus:border-brand-500" onchange="saveAgendaConfig()">
+                                <option value="15">15 Minutos</option>
+                                <option value="30" selected>30 Minutos</option>
+                                <option value="45">45 Minutos</option>
+                                <option value="60">60 Minutos</option>
+                            </select>
+                        </div>
+
+                        <!-- Respuesta Automática -->
+                        <div>
+                            <label class="block text-gray-400 font-semibold mb-1">Mensaje Auto-Respuesta:</label>
+                            <textarea id="agenda-autoresponse" rows="4" class="w-full bg-white border border-gray-200 rounded-xl px-2.5 py-1.5 focus:outline-none focus:border-brand-500 resize-none text-[10px]" placeholder="Mensaje enviado o mostrado al paciente cuando cotice..."></textarea>
+                            <button onclick="saveAgendaConfig()" class="w-full mt-1.5 bg-brand-600 hover:bg-brand-700 text-white font-semibold py-1 rounded-lg transition-colors text-[10px] shadow">
+                                Guardar Mensaje
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Horarios del Día / Slots -->
+                    <div class="md:col-span-3 flex flex-col space-y-3">
+                        <div class="flex justify-between items-center bg-teal-50 border border-teal-150 px-3.5 py-2 rounded-xl">
+                            <span class="text-xs font-bold text-brand-700">Espacios de Citas y Bloqueos</span>
+                            <button onclick="openBlockSlotModal()" class="bg-brand-600 hover:bg-brand-700 text-white font-bold px-3 py-1 rounded-lg text-[10px] transition-colors shadow">
+                                <i class="fa-solid fa-plus mr-1"></i> Bloquear Espacio
+                            </button>
+                        </div>
+
+                        <div id="agenda-slots-container" class="grid grid-cols-2 sm:grid-cols-3 gap-3 overflow-y-auto max-h-[350px] pr-1">
+                            <!-- Slots dinámicos -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Overlay para no Premium -->
+                <div id="agenda-lock-overlay" class="absolute inset-0 bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center space-y-3 z-20">
+                    <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center text-lg animate-bounce">
+                        <i class="fa-solid fa-crown"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold text-gray-900 uppercase tracking-wider">Agenda y Calendario Google-Style</h4>
+                        <p class="text-[10px] text-gray-550 mt-1 max-w-[300px] mx-auto leading-relaxed">Administra tu disponibilidad médica, bloquea tus horarios y comparte turnos libres de manera inteligente y automática con tus pacientes por $15/mes.</p>
+                    </div>
+                    <button onclick="triggerPremiumUpgrade()" class="bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white font-bold px-5 py-2 rounded-xl text-[10px] shadow transition-all transform hover:scale-105">
+                        Actualizar a Premium (+$5/mes)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right: Configurar Disponibilidad por Día (1 col) -->
+            <div class="glassmorphism rounded-2xl p-6 relative overflow-hidden shadow-sm flex flex-col min-h-[300px]" id="availability-config-box">
+                <h3 class="font-bold text-gray-900 flex items-center mb-4">
+                    <i class="fa-solid fa-clock text-brand-500 mr-2"></i> Horarios de Atención
+                </h3>
+
+                <div id="availability-days-container" class="space-y-3 text-xs flex-1">
+                    <!-- Días de la semana dinámicos -->
+                </div>
+
+                <!-- Overlay para no Premium -->
+                <div id="availability-lock-overlay" class="absolute inset-0 bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center space-y-3 z-20">
+                    <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center text-lg animate-bounce">
+                        <i class="fa-solid fa-crown"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold text-gray-900 uppercase tracking-wider">Horarios Especiales</h4>
+                        <p class="text-[10px] text-gray-550 mt-1 max-w-[200px] mx-auto leading-relaxed">Configura tus horas exactas de inicio y fin de consultas por cada día de la semana.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
     </main>
 
     <!-- PayPhone Simulated Checkout Modal -->
@@ -725,9 +820,14 @@
                 
                 // Habilitar / Deshabilitar social networks box
                 const socialLockOverlay = document.getElementById('social-lock-overlay');
+                const agendaLockOverlay = document.getElementById('agenda-lock-overlay');
+                const availabilityLockOverlay = document.getElementById('availability-lock-overlay');
+                
                 if (esPremium) {
                     if (lockOverlay) lockOverlay.classList.add('hidden');
                     if (socialLockOverlay) socialLockOverlay.classList.add('hidden');
+                    if (agendaLockOverlay) agendaLockOverlay.classList.add('hidden');
+                    if (availabilityLockOverlay) availabilityLockOverlay.classList.add('hidden');
                     campForm.classList.remove('hidden');
                     campList.classList.remove('hidden');
                     document.getElementById('nav-title').innerHTML = `Panel <span class="text-brand-600"><i class="fa-solid fa-crown mr-1"></i> Premium</span>`;
@@ -744,9 +844,12 @@
                     }
                     
                     loadCampaigns();
+                    loadAgenda();
                 } else {
                     if (lockOverlay) lockOverlay.classList.remove('hidden');
                     if (socialLockOverlay) socialLockOverlay.classList.remove('hidden');
+                    if (agendaLockOverlay) agendaLockOverlay.classList.remove('hidden');
+                    if (availabilityLockOverlay) availabilityLockOverlay.classList.remove('hidden');
                     campForm.classList.add('hidden');
                     campList.classList.add('hidden');
                 }
@@ -987,6 +1090,266 @@
             }
         }
 
+        };
+
+        // --- LÓGICA DE AGENDA Y CALENDARIO PREMIUM ---
+        document.getElementById('agenda-date').valueAsDate = new Date();
+
+        let agendaConfig = null;
+
+        async function loadAgenda() {
+            const dateVal = document.getElementById('agenda-date').value;
+            if (!dateVal) return;
+
+            try {
+                // 1. Cargar Configuración de Agenda
+                const configRes = await fetch('/api/proveedores/me/agenda-config', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (configRes.ok) {
+                    agendaConfig = await configRes.json();
+                    document.getElementById('agenda-duracion').value = agendaConfig.duracion_turno;
+                    document.getElementById('agenda-autoresponse').value = agendaConfig.respuesta_automatica || "";
+                    renderAvailabilityDays(agendaConfig.horarios_disponibilidad || {});
+                }
+
+                // 2. Cargar Citas
+                const citasRes = await fetch(`/api/proveedores/me/citas?fecha=${dateVal}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const configData = agendaConfig || { duracion_turno: 30, horarios_disponibilidad: {} };
+                
+                if (citasRes.ok) {
+                    const citas = await citasRes.json();
+                    
+                    // Determinar día de la semana
+                    const dateObj = new Date(dateVal + 'T00:00:00');
+                    const diasMap = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+                    const diaSemana = diasMap[dateObj.getDay()];
+                    
+                    const availability = configData.horarios_disponibilidad || {};
+                    const slotsDia = availability[diaSemana];
+                    const slotsContainer = document.getElementById('agenda-slots-container');
+                    
+                    if (!slotsDia || slotsDia.length < 2) {
+                        slotsContainer.innerHTML = `
+                            <div class="col-span-full py-12 text-center text-gray-400 bg-gray-50 border border-gray-150 rounded-2xl text-[11px]">
+                                <i class="fa-solid fa-calendar-xmark text-xl mb-1.5 text-gray-300"></i>
+                                <p class="font-medium text-gray-500">No consultas los días <strong>${diaSemana}</strong>.</p>
+                                <p class="text-[9px] text-gray-400 mt-0.5">Puedes activar este día en el panel de la derecha.</p>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    const startStr = slotsDia[0];
+                    const endStr = slotsDia[1];
+                    
+                    const toMins = (s) => {
+                        const parts = s.split(':');
+                        return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+                    };
+                    const toStr = (m) => {
+                        const h = Math.floor(m / 60).toString().padStart(2, '0');
+                        const min = (m % 60).toString().padStart(2, '0');
+                        return `${h}:${min}`;
+                    };
+
+                    let curr = toMins(startStr);
+                    const end = toMins(endStr);
+                    const step = configData.duracion_turno || 30;
+                    
+                    let slotsHtml = "";
+                    while (curr + step <= end) {
+                        const sStart = toStr(curr);
+                        const sEnd = toStr(curr + step);
+                        
+                        const ocupada = citas.find(c => c.hora_inicio < sEnd && c.hora_fin > sStart);
+                        
+                        if (ocupada) {
+                            const isBlock = ocupada.estado === 'BLOQUEADA';
+                            slotsHtml += `
+                                <div class="bg-red-50 border border-red-150 p-3 rounded-xl flex flex-col justify-between shadow-sm relative group">
+                                    <div>
+                                        <div class="flex justify-between items-start">
+                                            <span class="text-[10px] font-bold text-red-700">${sStart} - ${sEnd}</span>
+                                            <span class="text-[8px] bg-red-100/80 text-red-800 px-1 rounded-md font-semibold">${isBlock ? 'Bloqueo' : 'Cita'}</span>
+                                        </div>
+                                        <p class="text-[10px] font-semibold text-gray-800 mt-1 truncate max-w-[95%]" title="${ocupada.paciente_nombre}">${ocupada.paciente_nombre}</p>
+                                    </div>
+                                    <button onclick="cancelCita('${ocupada.id}')" class="absolute top-2 right-2 text-red-400 hover:text-red-600 hidden group-hover:block transition-colors" title="Eliminar Cita/Bloqueo">
+                                        <i class="fa-solid fa-circle-minus text-xs"></i>
+                                    </button>
+                                </div>
+                            `;
+                        } else {
+                            slotsHtml += `
+                                <div class="bg-emerald-50/60 border border-emerald-150/70 p-3 rounded-xl flex flex-col justify-between shadow-sm">
+                                    <span class="text-[10px] font-bold text-emerald-800">${sStart} - ${sEnd}</span>
+                                    <span class="text-[8px] text-emerald-600 font-semibold mt-1"><i class="fa-solid fa-circle-check mr-1 text-[7px]"></i> Disponible</span>
+                                </div>
+                            `;
+                        }
+                        
+                        curr += step;
+                    }
+                    
+                    slotsContainer.innerHTML = slotsHtml || `
+                        <div class="col-span-full py-8 text-center text-gray-400 text-xs">
+                            No se pudieron generar intervalos.
+                        </div>
+                    `;
+                }
+            } catch (err) {
+                console.error("Error al cargar agenda:", err);
+            }
+        }
+
+        function renderAvailabilityDays(horarios) {
+            const container = document.getElementById('availability-days-container');
+            const dias = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
+            
+            container.innerHTML = dias.map(d => {
+                const checked = horarios[d] ? 'checked' : '';
+                const start = horarios[d] ? horarios[d][0] : '09:00';
+                const end = horarios[d] ? horarios[d][1] : '17:00';
+                const disabledClass = horarios[d] ? '' : 'opacity-40';
+                
+                return `
+                    <div class="flex items-center justify-between border-b border-gray-100 pb-2 ${disabledClass}" id="row-day-${d}">
+                        <label class="flex items-center space-x-2 font-bold text-gray-800 capitalize select-none cursor-pointer">
+                            <input type="checkbox" id="check-day-${d}" ${checked} onchange="toggleDayActive('${d}')" class="text-brand-600 rounded">
+                            <span>${d}</span>
+                        </label>
+                        <div class="flex items-center space-x-2 font-mono">
+                            <input type="text" id="start-day-${d}" value="${start}" ${horarios[d] ? '' : 'disabled'} class="w-12 bg-white border border-gray-200 rounded-lg py-0.5 text-center focus:outline-none focus:border-brand-500 font-bold" onchange="saveAgendaConfig()">
+                            <span class="text-gray-400">-</span>
+                            <input type="text" id="end-day-${d}" value="${end}" ${horarios[d] ? '' : 'disabled'} class="w-12 bg-white border border-gray-200 rounded-lg py-0.5 text-center focus:outline-none focus:border-brand-500 font-bold" onchange="saveAgendaConfig()">
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function toggleDayActive(day) {
+            const checked = document.getElementById(`check-day-${day}`).checked;
+            const startInput = document.getElementById(`start-day-${day}`);
+            const endInput = document.getElementById(`end-day-${day}`);
+            const row = document.getElementById(`row-day-${day}`);
+            
+            if (checked) {
+                startInput.disabled = false;
+                endInput.disabled = false;
+                row.classList.remove('opacity-40');
+            } else {
+                startInput.disabled = true;
+                endInput.disabled = true;
+                row.classList.add('opacity-40');
+            }
+            saveAgendaConfig();
+        }
+
+        async function saveAgendaConfig() {
+            if (!agendaConfig) return;
+            
+            const dias = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
+            const horarios = {};
+            
+            dias.forEach(d => {
+                const checked = document.getElementById(`check-day-${d}`).checked;
+                if (checked) {
+                    const start = document.getElementById(`start-day-${d}`).value;
+                    const end = document.getElementById(`end-day-${d}`).value;
+                    horarios[d] = [start, end];
+                }
+            });
+
+            const payload = {
+                horarios_disponibilidad: horarios,
+                duracion_turno: parseInt(document.getElementById('agenda-duracion').value),
+                respuesta_automatica: document.getElementById('agenda-autoresponse').value
+            };
+
+            try {
+                const response = await fetch('/api/proveedores/me/agenda-config', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) throw new Error("Error al guardar cambios de agenda");
+                loadAgenda();
+            } catch(e) {
+                alert(e.message);
+            }
+        }
+
+        function openBlockSlotModal() {
+            document.getElementById('block-patient-name').value = "";
+            document.getElementById('block-start-time').value = "";
+            document.getElementById('block-end-time').value = "";
+            document.getElementById('block-slot-modal').classList.remove('hidden');
+        }
+
+        function closeBlockSlotModal() {
+            document.getElementById('block-slot-modal').classList.add('hidden');
+        }
+
+        async function submitBlockSlot(state) {
+            const patientName = document.getElementById('block-patient-name').value.trim() || (state === 'BLOQUEADA' ? 'Bloqueo Manual' : 'Cita Directa');
+            const startTime = document.getElementById('block-start-time').value.trim();
+            const endTime = document.getElementById('block-end-time').value.trim();
+            const dateVal = document.getElementById('agenda-date').value;
+
+            if (!startTime || !endTime) {
+                alert("Completa hora de inicio y fin.");
+                return;
+            }
+
+            const payload = {
+                paciente_nombre: patientName,
+                fecha: dateVal,
+                hora_inicio: startTime,
+                hora_fin: endTime,
+                estado: state
+            };
+
+            try {
+                const response = await fetch('/api/proveedores/me/citas', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.detail || "Error al guardar");
+
+                closeBlockSlotModal();
+                loadAgenda();
+            } catch(e) {
+                alert(e.message);
+            }
+        }
+
+        async function cancelCita(citaId) {
+            if (!confirm("¿Deseas eliminar este turno/bloqueo?")) return;
+            try {
+                const response = await fetch(`/api/proveedores/me/citas/${citaId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!response.ok) throw new Error("Error al eliminar");
+                loadAgenda();
+            } catch(e) {
+                alert(e.message);
+            }
+        }
+
         window.addEventListener('load', fetchDashboardData);
     </script>
 
@@ -1009,6 +1372,50 @@
             <p class="text-[10px] text-gray-400 text-center mt-3 leading-relaxed max-w-[220px]">
                 Apunta la cámara trasera de tu dispositivo hacia el código QR de cupón que te presente el paciente.
             </p>
+        </div>
+    </div>
+
+    <!-- Modal para Bloquear Horario de Agenda (Proveedor) -->
+    <div id="block-slot-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl border border-gray-150 animate-fade-in relative">
+            <button onclick="closeBlockSlotModal()" class="absolute top-5 right-5 text-gray-400 hover:text-gray-850 transition-colors">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            
+            <div class="text-center space-y-1">
+                <div class="w-12 h-12 bg-teal-50 text-brand-600 rounded-full flex items-center justify-center mx-auto text-xl shadow-inner">
+                    <i class="fa-solid fa-calendar-plus animate-pulse"></i>
+                </div>
+                <h3 class="text-base font-bold text-gray-900">Bloquear Espacio / Nueva Cita</h3>
+                <p class="text-[10px] text-gray-500 leading-relaxed">Registra una cita directa o bloquea un horario en tu agenda.</p>
+            </div>
+            
+            <div class="space-y-3 pt-2 text-xs">
+                <div>
+                    <label class="block text-gray-400 font-semibold mb-1">Nombre Paciente / Motivo:</label>
+                    <input type="text" id="block-patient-name" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-brand-500 font-medium" placeholder="Ej: Bloqueo Almuerzo o Nombre Paciente">
+                </div>
+                
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-gray-400 font-semibold mb-1">Hora Inicio (HH:MM):</label>
+                        <input type="text" id="block-start-time" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-brand-500 font-mono text-center font-bold" placeholder="09:00">
+                    </div>
+                    <div>
+                        <label class="block text-gray-400 font-semibold mb-1">Hora Fin (HH:MM):</label>
+                        <input type="text" id="block-end-time" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-brand-500 font-mono text-center font-bold" placeholder="09:30">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex space-x-2 pt-2">
+                <button onclick="submitBlockSlot('BLOQUEADA')" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2.5 rounded-xl text-xs transition-colors shadow">
+                    Bloquear
+                </button>
+                <button onclick="submitBlockSlot('RESERVADA')" class="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 rounded-xl text-xs transition-colors shadow">
+                    Guardar Cita
+                </button>
+            </div>
         </div>
     </div>
 </body>

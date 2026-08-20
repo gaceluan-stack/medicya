@@ -594,6 +594,25 @@ function selectProviderForRouting(id) {
                 </div>
             </div>
 
+            <!-- Reservar Cita (Premium Feature) -->
+            ${prov.es_premium ? `
+            <div class="space-y-3 pt-3 border-t border-gray-100">
+                <h4 class="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center">
+                    <i class="fa-solid fa-calendar-check text-brand-500 mr-2"></i> Seleccionar Fecha y Hora (Premium)
+                </h4>
+                <div class="space-y-2">
+                    <div class="flex items-center space-x-2">
+                        <input type="date" id="booking-date" class="w-full bg-white border border-gray-250 rounded-xl px-3 py-1.5 text-xs text-gray-800 focus:outline-none focus:border-brand-500 font-medium" onchange="loadPublicAvailability('${prov.id}')">
+                    </div>
+                    
+                    <!-- Slots Container -->
+                    <div id="public-slots-container" class="grid grid-cols-3 gap-2 max-h-[150px] overflow-y-auto pr-1">
+                        <p class="col-span-full text-[9px] text-gray-400 text-center py-2">Selecciona una fecha para ver disponibilidad</p>
+                    </div>
+                </div>
+            </div>
+            ` : ''}
+
             <!-- Resumen de cotización -->
             <div class="bg-gradient-to-br from-brand-50/50 to-white border border-brand-500/10 p-4 rounded-2xl flex justify-between items-center text-xs shadow-sm">
                 <div>
@@ -637,9 +656,43 @@ function recalculateQuote(providerId) {
 }
 
 // Recopila los servicios y genera el trigger de WhatsApp con la cotización formateada
-function triggerWhatsAppQuote(providerId) {
+async function triggerWhatsAppQuote(providerId) {
     const prov = loadedProviders[providerId];
     if (!prov) return;
+    
+    // Si seleccionó turno y el proveedor es premium, intentar reservar en la base de datos
+    if (prov.es_premium && selectedBookingSlot) {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            alert("Por favor inicia sesión o regístrate para apartar este horario en la agenda del doctor.");
+            openRegisterModal();
+            return;
+        }
+        
+        try {
+            const resCita = await fetch(`/api/proveedores/${prov.id}/reservar-cita`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    paciente_nombre: localStorage.getItem('email') || 'Paciente Registrado',
+                    fecha: selectedBookingSlot.date,
+                    hora_inicio: selectedBookingSlot.start,
+                    hora_fin: selectedBookingSlot.end,
+                    estado: 'RESERVADA'
+                })
+            });
+            if (!resCita.ok) {
+                const errData = await resCita.json();
+                throw new Error(errData.detail || "No se pudo reservar el turno.");
+            }
+        } catch(e) {
+            alert("No pudimos reservar ese turno: " + e.message);
+            return;
+        }
+    }
     
     const checkboxes = document.querySelectorAll('input[type="checkbox"][id^="svc-"]');
     let selected = [];
@@ -655,7 +708,21 @@ function triggerWhatsAppQuote(providerId) {
     });
     
     // Formatear el mensaje
-    let message = `¡Hola! Vi tu perfil en *Medic YA* y me gustaría agendar una cita en *${prov.nombre_comercial}*.\n\n`;
+    let message = "";
+    
+    // Respuesta automática
+    if (prov.es_premium && doctorAutoResponse) {
+        message += `_*Respuesta Automática del Profesional: "${doctorAutoResponse}"*_\n\n`;
+    }
+    
+    // Turno reservado
+    if (prov.es_premium && selectedBookingSlot) {
+        message += `📅 *TURNO APARTADO EN TU AGENDA:*\n`;
+        message += `• Fecha: ${selectedBookingSlot.date}\n`;
+        message += `• Hora: ${selectedBookingSlot.start} a ${selectedBookingSlot.end}\n\n`;
+    }
+    
+    message += `¡Hola! Vi tu perfil en *Medic YA* y me gustaría agendar una cita en *${prov.nombre_comercial}*.\n\n`;
     message += `📋 *SERVICIOS COTIZADOS:*\n`;
     selected.forEach(s => {
         message += `• ${s.name}: $${s.price.toFixed(2)} USD\n`;
@@ -664,6 +731,71 @@ function triggerWhatsAppQuote(providerId) {
     message += `Por favor, confírmame tu disponibilidad para agendar. ¡Muchas gracias!`;
     
     contactProviderWithQuote(prov.id, prov.nombre_comercial, prov.celular_whatsapp, message);
+}
+
+// --- FUNCIONES DE AGENDA PÚBLICA PARA PACIENTES (PREMIUM) ---
+let selectedBookingSlot = null;
+let doctorAutoResponse = "";
+
+async function loadPublicAvailability(providerId) {
+    const dateVal = document.getElementById('booking-date').value;
+    if (!dateVal) return;
+    
+    selectedBookingSlot = null; // reset
+    
+    const container = document.getElementById('public-slots-container');
+    container.innerHTML = `
+        <div class="col-span-full py-4 text-center text-gray-400 animate-pulse text-[10px]">
+            Cargando turnos disponibles...
+        </div>
+    `;
+    
+    try {
+        const response = await fetch(`/api/proveedores/${providerId}/agenda-disponibilidad?fecha=${dateVal}`);
+        if (!response.ok) throw new Error("Error al obtener disponibilidad");
+        
+        const data = await response.json();
+        doctorAutoResponse = data.respuesta_automatica || "";
+        
+        if (!data.es_premium || data.slots.length === 0) {
+            container.innerHTML = `
+                <p class="col-span-full text-[9px] text-gray-500 text-center py-2 bg-gray-50 border border-gray-150 rounded-xl">El profesional no atiende esta fecha o no tiene turnos configurados.</p>
+            `;
+            return;
+        }
+        
+        let slotsHtml = data.slots.map(s => {
+            if (s.libre) {
+                return `
+                    <button onclick="selectBookingSlot('${dateVal}', '${s.hora_inicio}', '${s.hora_fin}', this)" class="bg-teal-50 hover:bg-brand-600 hover:text-white border border-teal-150 rounded-xl py-1 text-center text-[10px] font-bold text-brand-700 transition-all select-slot-btn">
+                        ${s.hora_inicio}
+                    </button>
+                `;
+            } else {
+                return `
+                    <button disabled class="bg-gray-100 border border-gray-200 rounded-xl py-1 text-center text-[10px] font-bold text-gray-400 opacity-55 cursor-not-allowed">
+                        ${s.hora_inicio}
+                    </button>
+                `;
+            }
+        }).join('');
+        
+        container.innerHTML = slotsHtml;
+    } catch (err) {
+        container.innerHTML = `<p class="col-span-full text-[9px] text-red-500 text-center py-2">${err.message}</p>`;
+    }
+}
+
+function selectBookingSlot(date, start, end, element) {
+    document.querySelectorAll('.select-slot-btn').forEach(btn => {
+        btn.classList.remove('bg-brand-600', 'text-white');
+        btn.classList.add('bg-teal-50', 'text-brand-700');
+    });
+    
+    element.classList.remove('bg-teal-50', 'text-brand-700');
+    element.classList.add('bg-brand-600', 'text-white');
+    
+    selectedBookingSlot = { date, start, end };
 }
 
 function goBackToList() {

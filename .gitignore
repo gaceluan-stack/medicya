@@ -28,3 +28,6 @@ ENV/
 .agents/
 .gemini/
 deploy_seed.ps1
+
+# Local Netlify folder
+.netlify

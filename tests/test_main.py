@@ -918,4 +918,142 @@ def test_ecuador_whatsapp_formatting():
     # Caso 6: Formato con doble cero
     assert format_ecuador_whatsapp("00593984183790") == "+593984183790"
 
+def test_agenda_and_citas():
+    # 1. Registrar Doctor Premium
+    prov_data = {
+        "email": "premium_agenda@test.com",
+        "password": "agenda_password",
+        "ruc_cedula": "1792837458001",
+        "nombre_comercial": "Consultorio Premium Agenda",
+        "celular_whatsapp": "+593985556666",
+        "categoria": "Doctores",
+        "especialidad": "Cardiología",
+        "latitud": -0.180653,
+        "longitud": -78.467834,
+        "precio_consulta": 40.00,
+        "es_premium": True
+    }
+    
+    login_admin = {
+        "username": "admin@medicya.com",
+        "password": "admin123"
+    }
+    admin_token = client.post("/api/auth/login", data=login_admin).json()["access_token"]
+    
+    res_reg = client.post(
+        "/api/admin/proveedores",
+        json=prov_data,
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert res_reg.status_code == 201
+    prov_id = res_reg.json()["id"]
+    
+    # Login del doctor premium
+    token_prov = client.post("/api/auth/login", data={
+        "username": "premium_agenda@test.com",
+        "password": "agenda_password"
+    }).json()["access_token"]
+    
+    # 2. GET /me/agenda-config (debería auto-crearse)
+    res_config = client.get(
+        "/api/proveedores/me/agenda-config",
+        headers={"Authorization": f"Bearer {token_prov}"}
+    )
+    assert res_config.status_code == 200
+    assert res_config.json()["duracion_turno"] == 30
+    
+    # 3. PUT /me/agenda-config
+    update_payload = {
+        "horarios_disponibilidad": {
+            "lunes": ["08:00", "12:00"]
+        },
+        "duracion_turno": 60,
+        "respuesta_automatica": "Hola, auto-respuesta test."
+    }
+    res_update = client.put(
+        "/api/proveedores/me/agenda-config",
+        json=update_payload,
+        headers={"Authorization": f"Bearer {token_prov}"}
+    )
+    assert res_update.status_code == 200
+    assert res_update.json()["duracion_turno"] == 60
+    assert res_update.json()["respuesta_automatica"] == "Hola, auto-respuesta test."
+    
+    # 4. GET /me/citas (vacía inicialmente)
+    res_citas = client.get(
+        "/api/proveedores/me/citas",
+        headers={"Authorization": f"Bearer {token_prov}"}
+    )
+    assert res_citas.status_code == 200
+    assert len(res_citas.json()) == 0
+    
+    # 5. POST /me/citas (Crear bloqueo manual)
+    cita_payload = {
+        "paciente_nombre": "Bloqueo Almuerzo",
+        "fecha": "2026-08-24", # Es lunes
+        "hora_inicio": "10:00",
+        "hora_fin": "11:00",
+        "estado": "BLOQUEADA"
+    }
+    res_add_cita = client.post(
+        "/api/proveedores/me/citas",
+        json=cita_payload,
+        headers={"Authorization": f"Bearer {token_prov}"}
+    )
+    assert res_add_cita.status_code == 200
+    cita_id = res_add_cita.json()["id"]
+    
+    # 6. GET public disponibilidad para la fecha de lunes 2026-08-24
+    res_disp = client.get(f"/api/proveedores/{prov_id}/agenda-disponibilidad?fecha=2026-08-24")
+    assert res_disp.status_code == 200
+    slots = res_disp.json()["slots"]
+    assert len(slots) == 4
+    assert slots[0]["hora_inicio"] == "08:00"
+    assert slots[0]["libre"] is True
+    assert slots[2]["hora_inicio"] == "10:00"
+    assert slots[2]["libre"] is False # Ocupado por bloqueo
+    
+    # 7. Paciente registra cita
+    # Registrar paciente de prueba
+    pac_data = {
+        "email": "patient_agenda@test.com",
+        "password": "pacientepassword",
+        "nombres": "Pedro",
+        "apellidos": "Sánchez",
+        "cedula": "1723456789",
+        "celular_whatsapp": "+593977778888",
+        "origen_informacion": "TikTok"
+    }
+    res_pac = client.post("/api/auth/register-paciente", json=pac_data)
+    assert res_pac.status_code == 200
+    token_pac = res_pac.json()["access_token"]
+    
+    # Reservar cita en slot libre 08:00
+    res_reserve = client.post(
+        f"/api/proveedores/{prov_id}/reservar-cita",
+        json={
+            "paciente_nombre": "Pedro Sánchez",
+            "fecha": "2026-08-24",
+            "hora_inicio": "08:00",
+            "hora_fin": "09:00",
+            "estado": "RESERVADA"
+        },
+        headers={"Authorization": f"Bearer {token_pac}"}
+    )
+    assert res_reserve.status_code == 200
+    
+    # Volver a verificar disponibilidad pública (ahora 08:00 debe ser ocupado)
+    res_disp2 = client.get(f"/api/proveedores/{prov_id}/agenda-disponibilidad?fecha=2026-08-24")
+    slots2 = res_disp2.json()["slots"]
+    assert slots2[0]["hora_inicio"] == "08:00"
+    assert slots2[0]["libre"] is False # Reservado por paciente
+    
+    # 8. Eliminar bloqueo manual por el doctor
+    res_del = client.delete(
+        f"/api/proveedores/me/citas/{cita_id}",
+        headers={"Authorization": f"Bearer {token_prov}"}
+    )
+    assert res_del.status_code == 200
+
+
 

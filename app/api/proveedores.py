@@ -618,3 +618,322 @@ def update_provider_redes(
     
     db.commit()
     return {"message": "Redes sociales actualizadas exitosamente."}
+
+
+# --- ENDPOINTS DE AGENDA Y CALENDARIO PARA PROVEEDORES PREMIUM ---
+
+@router.get("/me/agenda-config", response_model=proveedor_schemas.ConfiguracionAgendaResponse)
+def get_agenda_config(
+    current_user: models.UsuarioSistema = Depends(deps.get_current_provider),
+    db: Session = Depends(get_db)
+):
+    """
+    Retorna la configuración de la agenda para el proveedor actual.
+    Si no existe y es Premium, se auto-crea con valores por defecto.
+    """
+    proveedor = db.query(models.ProveedorServicio).filter(
+        models.ProveedorServicio.usuario_id == current_user.id
+    ).first()
+    if not proveedor:
+        raise HTTPException(status_code=404, detail="Proveedor no encontrado")
+        
+    if not proveedor.es_premium:
+        raise HTTPException(
+            status_code=403,
+            detail="La funcionalidad de Agenda y Calendario está reservada únicamente para cuentas Premium."
+        )
+        
+    config = db.query(models.ConfiguracionAgendaProveedor).filter(
+        models.ConfiguracionAgendaProveedor.proveedor_id == proveedor.id
+    ).first()
+    
+    if not config:
+        horarios_default = {
+            "lunes": ["09:00", "17:00"],
+            "martes": ["09:00", "17:00"],
+            "miercoles": ["09:00", "17:00"],
+            "jueves": ["09:00", "17:00"],
+            "viernes": ["09:00", "17:00"]
+        }
+        config = models.ConfiguracionAgendaProveedor(
+            proveedor_id=proveedor.id,
+            horarios_disponibilidad=horarios_default,
+            duracion_turno=30,
+            respuesta_automatica="Hola, gracias por contactarme. He recibido tu solicitud. Estaré encantado de atenderte."
+        )
+        db.add(config)
+        db.commit()
+        db.refresh(config)
+        
+    return config
+
+
+@router.put("/me/agenda-config", response_model=proveedor_schemas.ConfiguracionAgendaResponse)
+def update_agenda_config(
+    config_in: proveedor_schemas.ConfiguracionAgendaUpdate,
+    current_user: models.UsuarioSistema = Depends(deps.get_current_provider),
+    db: Session = Depends(get_db)
+):
+    """
+    Actualiza la configuración de disponibilidad y mensaje automático de la agenda del proveedor.
+    """
+    proveedor = db.query(models.ProveedorServicio).filter(
+        models.ProveedorServicio.usuario_id == current_user.id
+    ).first()
+    if not proveedor:
+        raise HTTPException(status_code=404, detail="Proveedor no encontrado")
+        
+    if not proveedor.es_premium:
+        raise HTTPException(
+            status_code=403,
+            detail="La funcionalidad de Agenda y Calendario está reservada únicamente para cuentas Premium."
+        )
+        
+    config = db.query(models.ConfiguracionAgendaProveedor).filter(
+        models.ConfiguracionAgendaProveedor.proveedor_id == proveedor.id
+    ).first()
+    
+    if not config:
+        config = models.ConfiguracionAgendaProveedor(proveedor_id=proveedor.id)
+        db.add(config)
+        
+    if config_in.horarios_disponibilidad is not None:
+        config.horarios_disponibilidad = config_in.horarios_disponibilidad
+    if config_in.duracion_turno is not None:
+        config.duracion_turno = config_in.duracion_turno
+    if config_in.respuesta_automatica is not None:
+        config.respuesta_automatica = config_in.respuesta_automatica
+        
+    db.commit()
+    db.refresh(config)
+    return config
+
+
+@router.get("/me/citas", response_model=List[proveedor_schemas.CitaResponse])
+def get_provider_citas(
+    fecha: Optional[str] = None,
+    current_user: models.UsuarioSistema = Depends(deps.get_current_provider),
+    db: Session = Depends(get_db)
+):
+    """
+    Retorna la lista de citas reservadas y bloques de agenda del proveedor actual.
+    """
+    proveedor = db.query(models.ProveedorServicio).filter(
+        models.ProveedorServicio.usuario_id == current_user.id
+    ).first()
+    if not proveedor:
+        raise HTTPException(status_code=404, detail="Proveedor no encontrado")
+        
+    query = db.query(models.CitaProveedor).filter(
+        models.CitaProveedor.proveedor_id == proveedor.id
+    )
+    if fecha:
+        query = query.filter(models.CitaProveedor.fecha == fecha)
+        
+    return query.order_by(models.CitaProveedor.fecha.asc(), models.CitaProveedor.hora_inicio.asc()).all()
+
+
+@router.post("/me/citas", response_model=proveedor_schemas.CitaResponse)
+def create_provider_cita_manual(
+    cita_in: proveedor_schemas.CitaCreate,
+    current_user: models.UsuarioSistema = Depends(deps.get_current_provider),
+    db: Session = Depends(get_db)
+):
+    """
+    Permite al proveedor bloquear turnos manualmente o registrar citas de forma directa.
+    """
+    proveedor = db.query(models.ProveedorServicio).filter(
+        models.ProveedorServicio.usuario_id == current_user.id
+    ).first()
+    if not proveedor:
+        raise HTTPException(status_code=404, detail="Proveedor no encontrado")
+        
+    # Verificar solapamiento
+    solapada = db.query(models.CitaProveedor).filter(
+        models.CitaProveedor.proveedor_id == proveedor.id,
+        models.CitaProveedor.fecha == cita_in.fecha,
+        models.CitaProveedor.hora_inicio < cita_in.hora_fin,
+        models.CitaProveedor.hora_fin > cita_in.hora_inicio
+    ).first()
+    if solapada:
+        raise HTTPException(status_code=400, detail="El horario seleccionado se solapa con una cita o bloqueo existente.")
+        
+    nueva_cita = models.CitaProveedor(
+        proveedor_id=proveedor.id,
+        paciente_nombre=cita_in.paciente_nombre,
+        fecha=cita_in.fecha,
+        hora_inicio=cita_in.hora_inicio,
+        hora_fin=cita_in.hora_fin,
+        estado=cita_in.estado
+    )
+    db.add(nueva_cita)
+    db.commit()
+    db.refresh(nueva_cita)
+    return nueva_cita
+
+
+@router.delete("/me/citas/{cita_id}")
+def delete_provider_cita(
+    cita_id: str,
+    current_user: models.UsuarioSistema = Depends(deps.get_current_provider),
+    db: Session = Depends(get_db)
+):
+    """
+    Elimina o cancela una cita/bloqueo de la agenda del proveedor.
+    """
+    proveedor = db.query(models.ProveedorServicio).filter(
+        models.ProveedorServicio.usuario_id == current_user.id
+    ).first()
+    if not proveedor:
+        raise HTTPException(status_code=404, detail="Proveedor no encontrado")
+        
+    cita = db.query(models.CitaProveedor).filter(
+        models.CitaProveedor.id == cita_id,
+        models.CitaProveedor.proveedor_id == proveedor.id
+    ).first()
+    if not cita:
+        raise HTTPException(status_code=404, detail="Cita no encontrada")
+        
+    db.delete(cita)
+    db.commit()
+    return {"message": "Cita o bloqueo eliminado exitosamente."}
+
+
+@router.get("/{id}/agenda-disponibilidad")
+def get_public_agenda_disponibilidad(
+    id: str,
+    fecha: str, # Formato YYYY-MM-DD
+    db: Session = Depends(get_db)
+):
+    """
+    Retorna la disponibilidad pública de turnos para un doctor específico en una fecha dada.
+    """
+    proveedor = db.query(models.ProveedorServicio).filter(
+        models.ProveedorServicio.id == id
+    ).first()
+    if not proveedor:
+        raise HTTPException(status_code=404, detail="Proveedor no encontrado")
+        
+    if not proveedor.es_premium:
+        return {"es_premium": False, "slots": []}
+        
+    config = db.query(models.ConfiguracionAgendaProveedor).filter(
+        models.ConfiguracionAgendaProveedor.proveedor_id == proveedor.id
+    ).first()
+    
+    try:
+        import datetime as dt_mod
+        dt_val = dt_mod.datetime.strptime(fecha, "%Y-%m-%d")
+        dias_map = {
+            0: "lunes", 1: "martes", 2: "miercoles",
+            3: "jueves", 4: "viernes", 5: "sabado", 6: "domingo"
+        }
+        dia_semana = dias_map[dt_val.weekday()]
+    except Exception:
+        raise HTTPException(status_code=400, detail="Formato de fecha inválido. Utilice YYYY-MM-DD")
+        
+    horarios_disponibilidad = {}
+    duracion = 30
+    resp_automatica = "Hola, gracias por cotizar conmigo. Estaré atento a tu consulta."
+    if config:
+        horarios_disponibilidad = config.horarios_disponibilidad or {}
+        duracion = config.duracion_turno or 30
+        resp_automatica = config.respuesta_automatica or resp_automatica
+    else:
+        horarios_default = {
+            "lunes": ["09:00", "17:00"], "martes": ["09:00", "17:00"], "miercoles": ["09:00", "17:00"],
+            "jueves": ["09:00", "17:00"], "viernes": ["09:00", "17:00"]
+        }
+        horarios_disponibilidad = horarios_default
+        
+    slots_dia = horarios_disponibilidad.get(dia_semana)
+    if not slots_dia or len(slots_dia) < 2:
+        return {"es_premium": True, "respuesta_automatica": resp_automatica, "slots": []}
+        
+    start_str, end_str = slots_dia[0], slots_dia[1]
+    
+    try:
+        start_time = dt_mod.datetime.strptime(start_str, "%H:%M")
+        end_time = dt_mod.datetime.strptime(end_str, "%H:%M")
+    except Exception:
+        return {"es_premium": True, "respuesta_automatica": resp_automatica, "slots": []}
+        
+    slots = []
+    current_time = start_time
+    while current_time + dt_mod.timedelta(minutes=duracion) <= end_time:
+        slot_start = current_time.strftime("%H:%M")
+        next_time = current_time + dt_mod.timedelta(minutes=duracion)
+        slot_end = next_time.strftime("%H:%M")
+        slots.append({
+            "hora_inicio": slot_start,
+            "hora_fin": slot_end,
+            "libre": True
+        })
+        current_time = next_time
+        
+    citas_existentes = db.query(models.CitaProveedor).filter(
+        models.CitaProveedor.proveedor_id == proveedor.id,
+        models.CitaProveedor.fecha == fecha
+    ).all()
+    
+    for slot in slots:
+        for cita in citas_existentes:
+            if slot["hora_inicio"] < cita.hora_fin and slot["hora_fin"] > cita.hora_inicio:
+                slot["libre"] = False
+                break
+                
+    return {
+        "es_premium": True,
+        "respuesta_automatica": resp_automatica,
+        "slots": slots
+    }
+
+
+@router.post("/{id}/reservar-cita", response_model=proveedor_schemas.CitaResponse)
+def reservar_cita_public(
+    id: str,
+    cita_in: proveedor_schemas.CitaCreate,
+    current_user: models.UsuarioSistema = Depends(deps.get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Permite a un paciente registrado reservar una cita en la disponibilidad del proveedor.
+    """
+    if current_user.rol != models.RolUsuario.PACIENTE:
+        raise HTTPException(status_code=403, detail="Solo los pacientes registrados pueden reservar citas.")
+        
+    paciente = db.query(models.Paciente).filter(models.Paciente.usuario_id == current_user.id).first()
+    if not paciente:
+        raise HTTPException(status_code=404, detail="Paciente no encontrado")
+        
+    proveedor = db.query(models.ProveedorServicio).filter(models.ProveedorServicio.id == id).first()
+    if not proveedor:
+        raise HTTPException(status_code=404, detail="Proveedor no encontrado")
+        
+    if not proveedor.es_premium:
+        raise HTTPException(status_code=400, detail="Este proveedor no acepta reservaciones automáticas.")
+        
+    # Verificar solapamiento
+    solapada = db.query(models.CitaProveedor).filter(
+        models.CitaProveedor.proveedor_id == proveedor.id,
+        models.CitaProveedor.fecha == cita_in.fecha,
+        models.CitaProveedor.hora_inicio < cita_in.hora_fin,
+        models.CitaProveedor.hora_fin > cita_in.hora_inicio
+    ).first()
+    if solapada:
+        raise HTTPException(status_code=400, detail="El horario seleccionado ya no está disponible.")
+        
+    nueva_cita = models.CitaProveedor(
+        proveedor_id=proveedor.id,
+        paciente_id=paciente.id,
+        paciente_nombre=cita_in.paciente_nombre,
+        fecha=cita_in.fecha,
+        hora_inicio=cita_in.hora_inicio,
+        hora_fin=cita_in.hora_fin,
+        estado="RESERVADA"
+    )
+    db.add(nueva_cita)
+    db.commit()
+    db.refresh(nueva_cita)
+    return nueva_cita
+
