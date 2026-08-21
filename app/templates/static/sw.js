@@ -1,4 +1,4 @@
-const CACHE_NAME = 'medic-ya-cache-v4';
+const CACHE_NAME = 'medic-ya-cache-v5';
 const ASSETS = [
   '/',
   '/login',
@@ -43,8 +43,16 @@ self.addEventListener('activate', event => {
 
 // Interceptar peticiones y servir desde caché si está disponible
 self.addEventListener('fetch', event => {
-  // Ignorar peticiones a la API REST (para que siempre devuelva datos frescos del backend)
-  if (event.request.url.includes('/api/')) {
+  const url = event.request.url;
+  // Ignorar peticiones a la API REST y a páginas dinámicas/privadas de la app
+  if (
+    url.includes('/api/') || 
+    url.includes('/dashboard') || 
+    url.includes('/login') || 
+    url.includes('dashboard_prov.html') || 
+    url.includes('dashboard_admin.html') || 
+    url.includes('login.html')
+  ) {
     return;
   }
   
