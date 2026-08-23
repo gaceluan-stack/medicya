@@ -433,6 +433,30 @@ function applyAdvancedFilters() {
     }
     
     listContainer.innerHTML = listHtml;
+
+    // Centrar mapa si el usuario selecciona una ciudad/sector específico o auto-ajustar a marcadores
+    if (filterCiudad === 'Quito' && map) {
+        if (filterSector === 'La Carolina') {
+            map.setView([-0.180653, -78.467834], 14);
+        } else if (filterSector === 'Cumbayá') {
+            map.setView([-0.197491, -78.435552], 14);
+        } else {
+            map.setView([-0.180653, -78.467834], 13);
+        }
+    } else if (filterCiudad === 'Guayaquil' && map) {
+        if (filterSector === 'Urdesa') {
+            map.setView([-2.164398, -79.911048], 14);
+        } else if (filterSector === 'Samborondón') {
+            map.setView([-2.138407, -79.870375], 14);
+        } else {
+            map.setView([-2.19616, -79.88621], 13);
+        }
+    } else if (filtered.length > 0 && map) {
+        const bounds = markerCluster.getBounds();
+        if (bounds.isValid()) {
+            map.fitBounds(bounds, { maxZoom: 15, padding: [40, 40] });
+        }
+    }
 }
 
 // Clic al botón de contactar (Registra lead y abre WhatsApp con el mensaje personalizado de cotización)
