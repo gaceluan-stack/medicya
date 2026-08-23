@@ -118,15 +118,22 @@ async function obtainUserLocation() {
             navigator.geolocation.getCurrentPosition(
                 (position) => {
                     userCoords = [position.coords.latitude, position.coords.longitude];
-                    console.log("Ubicación por GPS obtenida:", userCoords);
+                    console.log("Ubicación exacta por GPS obtenida con alta precisión:", userCoords);
                     resolve();
                 },
                 async (error) => {
-                    console.warn("Permiso de GPS denegado o fallo. Activando GeoIP Fallback...");
+                    console.warn("Fallo o denegación de geolocalización por GPS (Código de error:", error.code, "). Activando GeoIP Fallback...");
+                    if (error.code === 1) { // PERMISSION_DENIED
+                        console.log("Acceso a ubicación denegado por el usuario.");
+                    }
                     await fetchGeoIPFallback();
                     resolve();
                 },
-                { timeout: 5000 }
+                { 
+                    enableHighAccuracy: true, 
+                    timeout: 8000, 
+                    maximumAge: 0 
+                }
             );
         } else {
             console.warn("Geolocalización no soportada por el navegador. Activando GeoIP Fallback...");
@@ -135,18 +142,36 @@ async function obtainUserLocation() {
     });
 }
 
-// Fallback de ubicación utilizando ipapi.co (basado en IP pública del cliente)
+// Fallback de ubicación utilizando múltiples APIs (ipapi.co y freeipapi.com) para evitar rate-limits
 async function fetchGeoIPFallback() {
+    // Intento 1: ipapi.co
     try {
         const response = await fetch('https://ipapi.co/json/');
-        if (!response.ok) throw new Error("Fallo ipapi");
-        const data = await response.json();
-        if (data.latitude && data.longitude) {
-            userCoords = [data.latitude, data.longitude];
-            console.log(`Ubicación GeoIP estimada (${data.city}, ${data.country}):`, userCoords);
+        if (response.ok) {
+            const data = await response.json();
+            if (data.latitude && data.longitude) {
+                userCoords = [data.latitude, data.longitude];
+                console.log(`Ubicación GeoIP (ipapi.co) estimada (${data.city}, ${data.country}):`, userCoords);
+                return;
+            }
         }
-    } catch (err) {
-        console.error("Error en GeoIP Fallback:", err);
+    } catch (e) {
+        console.warn("Fallo ipapi.co, intentando alternativa...");
+    }
+
+    // Intento 2: freeipapi.com (Respaldo ilimitado bajo HTTPS)
+    try {
+        const response = await fetch('https://freeipapi.com/api/json');
+        if (response.ok) {
+            const data = await response.json();
+            if (data.latitude && data.longitude) {
+                userCoords = [data.latitude, data.longitude];
+                console.log(`Ubicación GeoIP (freeipapi.com) estimada (${data.cityName}):`, userCoords);
+                return;
+            }
+        }
+    } catch (e) {
+        console.error("Error en todas las opciones de GeoIP Fallback:", e);
     }
 }
 
