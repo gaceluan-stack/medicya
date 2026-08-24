@@ -148,43 +148,63 @@
             
         </section>
 
-        <!-- Lower Panel Grid: CRM & Billings & Promo Campaigns -->
-        <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            <!-- Left: Leads CRM (2 cols) -->
-            <div class="lg:col-span-2 glassmorphism rounded-2xl p-6 flex flex-col min-h-[400px] shadow-sm">
-                <div class="flex justify-between items-center mb-5">
-                    <h3 class="font-bold text-gray-900 flex items-center">
-                        <i class="fa-solid fa-users-viewfinder text-brand-500 mr-2"></i> CRM de Leads y Prospectos
-                    </h3>
-                    <span class="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-lg" id="prospects-count">0 leads</span>
-                </div>
-                
-                <div class="flex-1 overflow-x-auto">
-                    <table class="w-full text-left border-collapse text-xs">
-                        <thead>
-                            <tr class="border-b border-gray-200 text-gray-400 uppercase font-semibold">
-                                <th class="pb-3 pr-2">Paciente</th>
-                                <th class="pb-3 pr-2">Identificación</th>
-                                <th class="pb-3 pr-2">WhatsApp</th>
-                                <th class="pb-3 pr-2">CRM Estado</th>
-                                <th class="pb-3">Último Click</th>
-                            </tr>
-                        </thead>
-                        <tbody id="prospects-table-body" class="divide-y divide-gray-100">
-                            <tr>
-                                <td colspan="5" class="py-8 text-center text-gray-400">
-                                    Cargando prospectos interesados...
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+        <!-- Tabs Navigation -->
+        <div class="flex border-b border-gray-200 space-x-6 text-xs font-bold mb-6">
+            <button onclick="switchTab('crm')" id="tab-btn-crm" class="pb-3 border-b-2 border-brand-500 text-brand-650 flex items-center space-x-2 transition-all font-bold">
+                <i class="fa-solid fa-users-viewfinder text-sm"></i>
+                <span>Leads y CRM</span>
+            </button>
+            <button onclick="switchTab('agenda')" id="tab-btn-agenda" class="pb-3 border-b-2 border-transparent text-gray-400 hover:text-gray-655 flex items-center space-x-2 transition-all">
+                <i class="fa-solid fa-calendar-days text-sm"></i>
+                <span>Mi Agenda y Google Calendar</span>
+            </button>
+            <button onclick="switchTab('publicidad')" id="tab-btn-publicidad" class="pb-3 border-b-2 border-transparent text-gray-400 hover:text-gray-655 flex items-center space-x-2 transition-all">
+                <i class="fa-solid fa-bullhorn text-sm"></i>
+                <span>Campañas, Redes y Publicidad</span>
+            </button>
+        </div>
+
+        <!-- Tab Content: CRM -->
+        <div id="tab-content-crm" class="space-y-6">
+            <div class="grid grid-cols-1 gap-6">
+                <!-- Left: Leads CRM (Full Width) -->
+                <div class="glassmorphism rounded-2xl p-6 flex flex-col min-h-[400px] shadow-sm">
+                    <div class="flex justify-between items-center mb-5">
+                        <h3 class="font-bold text-gray-900 flex items-center">
+                            <i class="fa-solid fa-users-viewfinder text-brand-500 mr-2"></i> CRM de Leads y Prospectos
+                        </h3>
+                        <span class="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-lg" id="prospects-count">0 leads</span>
+                    </div>
+                    
+                    <div class="flex-1 overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="border-b border-gray-200 text-gray-400 uppercase font-semibold">
+                                    <th class="pb-3 pr-2">Paciente</th>
+                                    <th class="pb-3 pr-2">Identificación</th>
+                                    <th class="pb-3 pr-2">WhatsApp</th>
+                                    <th class="pb-3 pr-2">CRM Estado</th>
+                                    <th class="pb-3">Último Click</th>
+                                </tr>
+                            </thead>
+                            <tbody id="prospects-table-body" class="divide-y divide-gray-100">
+                                <tr>
+                                    <td colspan="5" class="py-8 text-center text-gray-400">
+                                        Cargando prospectos interesados...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Right Column: Facturas & Campañas Premium -->
+        <!-- Tab Content: Publicidad y Configuración -->
+        <div id="tab-content-publicidad" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            <!-- Left Side: Facturas & Campañas -->
             <div class="space-y-6">
-                
                 <!-- Billing Centre -->
                 <div class="glassmorphism rounded-2xl p-6 flex flex-col shadow-sm">
                     <h3 class="font-bold text-gray-900 flex items-center mb-4">
@@ -237,7 +257,10 @@
                         </button>
                     </div>
                 </div>
+            </div>
 
+            <!-- Right Side: Redes & Publicidad -->
+            <div class="space-y-6">
                 <!-- Redes Sociales Premium -->
                 <div class="glassmorphism rounded-2xl p-6 relative overflow-hidden shadow-sm animate-fade-in" id="social-networks-box">
                     <h3 class="font-bold text-gray-900 flex items-center mb-4">
@@ -330,11 +353,12 @@
                 </div>
 
             </div>
-            
-        </section>
+        </div> <!-- End of tab-content-publicidad -->
 
-        <!-- Row 2: Agenda & Calendario (Google Calendar Style) -->
-        <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-6">
+        <!-- Tab Content: Agenda -->
+        <div id="tab-content-agenda" class="hidden">
+            <!-- Row 2: Agenda & Calendario (Google Calendar Style) -->
+            <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-6">
             <!-- Left: Interactive Calendar (2 cols) -->
             <div class="lg:col-span-2 glassmorphism rounded-2xl p-6 relative flex flex-col min-h-[500px] shadow-sm overflow-hidden" id="agenda-box">
                 <div class="flex justify-between items-center mb-5">
@@ -436,6 +460,7 @@
                 </div>
             </div>
         </section>
+        </div> <!-- End of tab-content-agenda -->
     </main>
 
     <!-- PayPhone Simulated Checkout Modal -->
@@ -1433,6 +1458,34 @@
         }
 
         window.addEventListener('load', fetchDashboardData);
+
+        function switchTab(tabName) {
+            // Ocultar todos los contenidos
+            document.getElementById('tab-content-crm').classList.add('hidden');
+            document.getElementById('tab-content-agenda').classList.add('hidden');
+            document.getElementById('tab-content-publicidad').classList.add('hidden');
+
+            // Quitar estilos activos de todos los botones de pestaña
+            const crmBtn = document.getElementById('tab-btn-crm');
+            const agendaBtn = document.getElementById('tab-btn-agenda');
+            const pubBtn = document.getElementById('tab-btn-publicidad');
+
+            crmBtn.className = "pb-3 border-b-2 border-transparent text-gray-400 hover:text-gray-655 flex items-center space-x-2 transition-all cursor-pointer";
+            agendaBtn.className = "pb-3 border-b-2 border-transparent text-gray-400 hover:text-gray-655 flex items-center space-x-2 transition-all cursor-pointer";
+            pubBtn.className = "pb-3 border-b-2 border-transparent text-gray-400 hover:text-gray-655 flex items-center space-x-2 transition-all cursor-pointer";
+
+            // Mostrar contenido seleccionado y aplicar estilos activos
+            if (tabName === 'crm') {
+                document.getElementById('tab-content-crm').classList.remove('hidden');
+                crmBtn.className = "pb-3 border-b-2 border-brand-500 text-brand-650 flex items-center space-x-2 transition-all font-bold cursor-pointer";
+            } else if (tabName === 'agenda') {
+                document.getElementById('tab-content-agenda').classList.remove('hidden');
+                agendaBtn.className = "pb-3 border-b-2 border-brand-500 text-brand-650 flex items-center space-x-2 transition-all font-bold cursor-pointer";
+            } else if (tabName === 'publicidad') {
+                document.getElementById('tab-content-publicidad').classList.remove('hidden');
+                pubBtn.className = "pb-3 border-b-2 border-brand-500 text-brand-650 flex items-center space-x-2 transition-all font-bold cursor-pointer";
+            }
+        }
     </script>
 
     <!-- QR Scanner Modal -->
