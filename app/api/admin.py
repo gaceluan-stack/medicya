@@ -73,6 +73,7 @@ def create_proveedor(
         link_tiktok=prov_in.link_tiktok,
         link_instagram=prov_in.link_instagram,
         link_facebook=prov_in.link_facebook,
+        google_calendar_link=prov_in.google_calendar_link,
         ciudad=prov_in.ciudad,
         sector=sector_auto,
         servicios_adicionales=prov_in.servicios_adicionales
@@ -101,6 +102,7 @@ def create_proveedor(
         link_tiktok=nuevo_proveedor.link_tiktok,
         link_instagram=nuevo_proveedor.link_instagram,
         link_facebook=nuevo_proveedor.link_facebook,
+        google_calendar_link=nuevo_proveedor.google_calendar_link,
         ciudad=nuevo_proveedor.ciudad,
         sector=nuevo_proveedor.sector,
         servicios_adicionales=nuevo_proveedor.servicios_adicionales
@@ -563,6 +565,8 @@ def update_proveedor(
         proveedor.link_instagram = prov_in.link_instagram
     if prov_in.link_facebook is not None:
         proveedor.link_facebook = prov_in.link_facebook
+    if prov_in.google_calendar_link is not None:
+        proveedor.google_calendar_link = prov_in.google_calendar_link
     if prov_in.ciudad is not None:
         proveedor.ciudad = prov_in.ciudad
     if prov_in.servicios_adicionales is not None:
@@ -599,6 +603,7 @@ def update_proveedor(
         link_tiktok=proveedor.link_tiktok,
         link_instagram=proveedor.link_instagram,
         link_facebook=proveedor.link_facebook,
+        google_calendar_link=proveedor.google_calendar_link,
         ciudad=proveedor.ciudad,
         sector=proveedor.sector,
         servicios_adicionales=proveedor.servicios_adicionales

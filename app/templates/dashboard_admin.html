@@ -215,19 +215,23 @@
 
                     <!-- Redes Sociales Form Fields (Solo Premium) -->
                     <div class="border-t border-gray-100 pt-2 space-y-2">
-                        <p class="text-[10px] text-gray-500 font-bold">Redes Sociales (Solo Premium)</p>
-                        <div class="grid grid-cols-3 gap-2">
+                        <p class="text-[10px] text-gray-500 font-bold">Redes Sociales y Enlaces (Solo Premium)</p>
+                        <div class="grid grid-cols-4 gap-2">
                             <div>
-                                <label class="block text-gray-450 font-semibold mb-1 text-[9px]">Instagram</label>
+                                <label class="block text-gray-405 font-semibold mb-1 text-[9px]">Instagram</label>
                                 <input type="url" id="prov-link-instagram" class="w-full bg-white border border-gray-200 rounded-xl px-2 py-1 text-gray-800 focus:outline-none focus:border-brand-500 placeholder-gray-400" placeholder="https://...">
                             </div>
                             <div>
-                                <label class="block text-gray-455 font-semibold mb-1 text-[9px]">TikTok</label>
+                                <label class="block text-gray-405 font-semibold mb-1 text-[9px]">TikTok</label>
                                 <input type="url" id="prov-link-tiktok" class="w-full bg-white border border-gray-200 rounded-xl px-2 py-1 text-gray-800 focus:outline-none focus:border-brand-500 placeholder-gray-400" placeholder="https://...">
                             </div>
                             <div>
-                                <label class="block text-gray-455 font-semibold mb-1 text-[9px]">Facebook</label>
+                                <label class="block text-gray-405 font-semibold mb-1 text-[9px]">Facebook</label>
                                 <input type="url" id="prov-link-facebook" class="w-full bg-white border border-gray-200 rounded-xl px-2 py-1 text-gray-800 focus:outline-none focus:border-brand-500 placeholder-gray-400" placeholder="https://...">
+                            </div>
+                            <div>
+                                <label class="block text-gray-405 font-semibold mb-1 text-[9px]">Google Calendar</label>
+                                <input type="url" id="prov-google-calendar" class="w-full bg-white border border-gray-200 rounded-xl px-2 py-1 text-gray-800 focus:outline-none focus:border-brand-500 placeholder-gray-400" placeholder="https://...">
                             </div>
                         </div>
                     </div>
@@ -1042,6 +1046,7 @@
                 link_instagram: document.getElementById('prov-link-instagram').value.trim() || null,
                 link_tiktok: document.getElementById('prov-link-tiktok').value.trim() || null,
                 link_facebook: document.getElementById('prov-link-facebook').value.trim() || null,
+                google_calendar_link: document.getElementById('prov-google-calendar').value.trim() || null,
                 imagen_url: null,
                 servicios_adicionales: services
             };
@@ -1133,6 +1138,7 @@
             document.getElementById('prov-link-instagram').value = p.link_instagram || "";
             document.getElementById('prov-link-tiktok').value = p.link_tiktok || "";
             document.getElementById('prov-link-facebook').value = p.link_facebook || "";
+            document.getElementById('prov-google-calendar').value = p.google_calendar_link || "";
             
             // Cargar servicios adicionales
             const servicesContainer = document.getElementById('services-container');
