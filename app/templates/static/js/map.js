@@ -660,10 +660,10 @@ function selectProviderForRouting(id) {
                     
                     <!-- Iframe para ver el calendario en tiempo real -->
                     <div class="w-full rounded-xl overflow-hidden border border-gray-200 shadow-sm bg-white h-[280px]">
-                        <iframe src="${prov.google_calendar_link}" class="w-full h-full" style="border:0;" frameborder="0" scrolling="yes"></iframe>
+                        <iframe src="${formatGoogleCalendarUrl(prov.google_calendar_link)}" class="w-full h-full" style="border:0;" frameborder="0" scrolling="yes"></iframe>
                     </div>
                     
-                    <a href="${prov.google_calendar_link}" target="_blank" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-1.5 px-3 rounded-lg text-[9px] text-center transition-all shadow flex items-center justify-center space-x-1.5">
+                    <a href="${formatGoogleCalendarUrl(prov.google_calendar_link)}" target="_blank" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-1.5 px-3 rounded-lg text-[9px] text-center transition-all shadow flex items-center justify-center space-x-1.5">
                         <i class="fa-solid fa-up-right-from-square text-[9px]"></i>
                         <span>Abrir en Pantalla Completa</span>
                     </a>
