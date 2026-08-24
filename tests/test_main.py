@@ -1055,5 +1055,48 @@ def test_agenda_and_citas():
     )
     assert res_del.status_code == 200
 
+    # 9. Test: Registrar google_calendar_link y reprogramar cita
+    # 9a. Actualizar google_calendar_link en la agenda
+    update_payload2 = {
+        "horarios_disponibilidad": {
+            "lunes": ["08:00", "12:00"]
+        },
+        "duracion_turno": 60,
+        "respuesta_automatica": "Hola, auto-respuesta test.",
+        "google_calendar_link": "https://calendar.google.com/calendar/appointments/schedules/mock_schedule"
+    }
+    res_update2 = client.put(
+        "/api/proveedores/me/agenda-config",
+        json=update_payload2,
+        headers={"Authorization": f"Bearer {token_prov}"}
+    )
+    assert res_update2.status_code == 200
+    assert res_update2.json()["google_calendar_link"] == "https://calendar.google.com/calendar/appointments/schedules/mock_schedule"
+
+    # Obtener la cita del paciente para reprogramar
+    res_citas_prov = client.get(
+        "/api/proveedores/me/citas",
+        headers={"Authorization": f"Bearer {token_prov}"}
+    )
+    assert res_citas_prov.status_code == 200
+    cita_paciente = [c for c in res_citas_prov.json() if c["paciente_nombre"] == "Pedro Sánchez"][0]
+    cita_paciente_id = cita_paciente["id"]
+    assert cita_paciente["paciente_celular"] == "+593977778888"
+
+    # Reprogramar la cita del paciente a otro bloque (09:00 a 10:00)
+    res_reprog = client.put(
+        f"/api/proveedores/me/citas/{cita_paciente_id}",
+        json={
+            "fecha": "2026-08-24",
+            "hora_inicio": "09:00",
+            "hora_fin": "10:00",
+            "estado": "RESERVADA"
+        },
+        headers={"Authorization": f"Bearer {token_prov}"}
+    )
+    assert res_reprog.status_code == 200
+    assert res_reprog.json()["hora_inicio"] == "09:00"
+    assert res_reprog.json()["hora_fin"] == "10:00"
+
 
 

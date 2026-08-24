@@ -24,6 +24,7 @@ class ProveedorCreate(BaseModel):
     ciudad: Optional[str] = Field(default="Quito", min_length=2, max_length=100)
     sector: Optional[str] = None
     servicios_adicionales: Optional[List[dict]] = None
+    google_calendar_link: Optional[str] = None
 
 class ProveedorResponse(BaseModel):
     id: str
@@ -48,6 +49,7 @@ class ProveedorResponse(BaseModel):
     ciudad: Optional[str] = None
     sector: Optional[str] = None
     servicios_adicionales: Optional[List[dict]] = None
+    google_calendar_link: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -75,12 +77,14 @@ class ProveedorAdminUpdate(BaseModel):
     email: Optional[EmailStr] = None
     password: Optional[str] = None
     servicios_adicionales: Optional[List[dict]] = None
+    google_calendar_link: Optional[str] = None
 
 
 class ConfiguracionAgendaUpdate(BaseModel):
     horarios_disponibilidad: Optional[dict] = None
     duracion_turno: Optional[int] = Field(None, ge=10, le=120)
     respuesta_automatica: Optional[str] = Field(None, max_length=1000)
+    google_calendar_link: Optional[str] = None
 
 
 class ConfiguracionAgendaResponse(BaseModel):
@@ -90,6 +94,7 @@ class ConfiguracionAgendaResponse(BaseModel):
     duracion_turno: int
     respuesta_automatica: Optional[str] = None
     created_at: datetime
+    google_calendar_link: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -103,6 +108,13 @@ class CitaCreate(BaseModel):
     estado: str = Field(default="RESERVADA")
 
 
+class CitaUpdate(BaseModel):
+    fecha: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$") # YYYY-MM-DD
+    hora_inicio: str = Field(..., pattern=r"^\d{2}:\d{2}$") # HH:MM
+    hora_fin: str = Field(..., pattern=r"^\d{2}:\d{2}$") # HH:MM
+    estado: Optional[str] = Field(None)
+
+
 class CitaResponse(BaseModel):
     id: str
     proveedor_id: str
@@ -113,6 +125,7 @@ class CitaResponse(BaseModel):
     hora_fin: str
     estado: str
     created_at: datetime
+    paciente_celular: Optional[str] = None
 
     class Config:
         from_attributes = True

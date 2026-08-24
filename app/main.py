@@ -41,8 +41,14 @@ try:
         except Exception:
             pass
     
-    # Ciudad, Sector, Celular y Servicios para proveedores
-    for col, col_type in [("ciudad", "VARCHAR(100)"), ("sector", "VARCHAR(100)"), ("celular_whatsapp", "VARCHAR(20) DEFAULT '593987654321'"), ("servicios_adicionales", "JSON")]:
+    # Ciudad, Sector, Celular, Servicios y Google Calendar para proveedores
+    for col, col_type in [
+        ("ciudad", "VARCHAR(100)"),
+        ("sector", "VARCHAR(100)"),
+        ("celular_whatsapp", "VARCHAR(20) DEFAULT '593987654321'"),
+        ("servicios_adicionales", "JSON"),
+        ("google_calendar_link", "VARCHAR(500)")
+    ]:
         try:
             with engine.begin() as conn:
                 conn.execute(text(f"ALTER TABLE proveedores_servicio ADD COLUMN {col} {col_type};"))

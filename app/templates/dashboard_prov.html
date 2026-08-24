@@ -373,6 +373,15 @@
                                 Guardar Mensaje
                             </button>
                         </div>
+
+                        <!-- Google Calendar Link -->
+                        <div>
+                            <label class="block text-gray-400 font-semibold mb-1">Enlace de Google Calendar:</label>
+                            <input type="url" id="agenda-google-calendar" class="w-full bg-white border border-gray-200 rounded-xl px-2.5 py-1.5 focus:outline-none focus:border-brand-500 text-[10px]" placeholder="Ej: https://calendar.google.com/calendar/appointments/schedules/...">
+                            <button onclick="saveAgendaConfig()" class="w-full mt-1.5 bg-brand-600 hover:bg-brand-700 text-white font-semibold py-1 rounded-lg transition-colors text-[10px] shadow">
+                                Guardar Enlace Calendar
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Horarios del Día / Slots -->
@@ -1110,6 +1119,7 @@
                     agendaConfig = await configRes.json();
                     document.getElementById('agenda-duracion').value = agendaConfig.duracion_turno;
                     document.getElementById('agenda-autoresponse').value = agendaConfig.respuesta_automatica || "";
+                    document.getElementById('agenda-google-calendar').value = agendaConfig.google_calendar_link || "";
                     renderAvailabilityDays(agendaConfig.horarios_disponibilidad || {});
                 }
 
@@ -1176,6 +1186,14 @@
                                             <span class="text-[8px] bg-red-100/80 text-red-800 px-1 rounded-md font-semibold">${isBlock ? 'Bloqueo' : 'Cita'}</span>
                                         </div>
                                         <p class="text-[10px] font-semibold text-gray-800 mt-1 truncate max-w-[95%]" title="${ocupada.paciente_nombre}">${ocupada.paciente_nombre}</p>
+                                    </div>
+                                    <div class="flex items-center space-x-1.5 mt-2">
+                                        ${!isBlock ? `
+                                            <button onclick="openRescheduleModal('${ocupada.id}', '${ocupada.paciente_nombre.replace(/'/g, "\\'")}', '${ocupada.fecha}', '${ocupada.hora_inicio}', '${ocupada.hora_fin}', '${ocupada.paciente_celular || ''}')" class="text-[9px] bg-brand-600 hover:bg-brand-700 text-white font-bold px-2 py-0.5 rounded-lg transition-colors flex items-center space-x-1 shadow-sm">
+                                                <i class="fa-solid fa-clock-rotate-left text-[8px]"></i>
+                                                <span>Reprogramar</span>
+                                            </button>
+                                        ` : ''}
                                     </div>
                                     <button onclick="cancelCita('${ocupada.id}')" class="absolute top-2 right-2 text-red-400 hover:text-red-600 hidden group-hover:block transition-colors" title="Eliminar Cita/Bloqueo">
                                         <i class="fa-solid fa-circle-minus text-xs"></i>
@@ -1267,7 +1285,8 @@
             const payload = {
                 horarios_disponibilidad: horarios,
                 duracion_turno: parseInt(document.getElementById('agenda-duracion').value),
-                respuesta_automatica: document.getElementById('agenda-autoresponse').value
+                respuesta_automatica: document.getElementById('agenda-autoresponse').value,
+                google_calendar_link: document.getElementById('agenda-google-calendar').value
             };
 
             try {
@@ -1295,6 +1314,69 @@
 
         function closeBlockSlotModal() {
             document.getElementById('block-slot-modal').classList.add('hidden');
+        }
+
+        function openRescheduleModal(id, pacienteNombre, fecha, horaInicio, horaFin, celular) {
+            document.getElementById('reschedule-cita-id').value = id;
+            document.getElementById('reschedule-patient-name').value = pacienteNombre;
+            document.getElementById('reschedule-date').value = fecha;
+            document.getElementById('reschedule-start-time').value = horaInicio;
+            document.getElementById('reschedule-end-time').value = horaFin;
+            document.getElementById('reschedule-patient-phone').value = celular;
+            document.getElementById('reschedule-modal').classList.remove('hidden');
+        }
+
+        function closeRescheduleModal() {
+            document.getElementById('reschedule-modal').classList.add('hidden');
+        }
+
+        async function submitRescheduleCita() {
+            const id = document.getElementById('reschedule-cita-id').value;
+            const phone = document.getElementById('reschedule-patient-phone').value;
+            const patientName = document.getElementById('reschedule-patient-name').value;
+            const dateVal = document.getElementById('reschedule-date').value;
+            const startTime = document.getElementById('reschedule-start-time').value.trim();
+            const endTime = document.getElementById('reschedule-end-time').value.trim();
+
+            if (!startTime || !endTime || !dateVal) {
+                alert("Completa la fecha y horas de la reprogramación.");
+                return;
+            }
+
+            const payload = {
+                fecha: dateVal,
+                hora_inicio: startTime,
+                hora_fin: endTime,
+                estado: "RESERVADA"
+            };
+
+            try {
+                const response = await fetch(`/api/proveedores/me/citas/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.detail || "Error al reprogramar la cita.");
+
+                alert("¡Cita reprogramada con éxito!");
+                closeRescheduleModal();
+                loadAgenda();
+
+                // Si hay número de celular, notificar por WhatsApp con redirect
+                if (phone) {
+                    const cleanPhone = phone.replace(/[^0-9]/g, '');
+                    // Formatear mensaje para el WhatsApp del paciente
+                    const msg = `Hola ${patientName}, he reprogramado tu cita médica en Medic YA. Tu nuevo horario confirmado es el día ${dateVal} de ${startTime} a ${endTime}. ¡Te esperamos!`;
+                    window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+                }
+            } catch(e) {
+                alert(e.message);
+            }
         }
 
         async function submitBlockSlot(state) {
@@ -1414,6 +1496,56 @@
                 </button>
                 <button onclick="submitBlockSlot('RESERVADA')" class="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 rounded-xl text-xs transition-colors shadow">
                     Guardar Cita
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Reprogramar Cita (Proveedor) -->
+    <div id="reschedule-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl border border-gray-150 animate-fade-in relative font-sans">
+            <button onclick="closeRescheduleModal()" class="absolute top-5 right-5 text-gray-400 hover:text-gray-850 transition-colors">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            
+            <div class="text-center space-y-1">
+                <div class="w-12 h-12 bg-teal-50 text-brand-600 rounded-full flex items-center justify-center mx-auto text-xl shadow-inner animate-bounce">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                </div>
+                <h3 class="text-base font-bold text-gray-900">Reprogramar Cita</h3>
+                <p class="text-[10px] text-gray-550 leading-relaxed">Cambia la fecha/hora y notifica al paciente por WhatsApp.</p>
+            </div>
+            
+            <div class="space-y-3 pt-2 text-xs">
+                <input type="hidden" id="reschedule-cita-id">
+                <input type="hidden" id="reschedule-patient-phone">
+                
+                <div>
+                    <label class="block text-gray-500 font-semibold mb-1">Paciente:</label>
+                    <input type="text" id="reschedule-patient-name" disabled class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-500 focus:outline-none font-bold" value="">
+                </div>
+
+                <div>
+                    <label class="block text-gray-550 font-semibold mb-1">Nueva Fecha (AAAA-MM-DD):</label>
+                    <input type="date" id="reschedule-date" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-brand-500 font-medium">
+                </div>
+                
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-gray-555 font-semibold mb-1">Hora Inicio (HH:MM):</label>
+                        <input type="text" id="reschedule-start-time" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-brand-500 font-mono text-center font-bold" placeholder="09:00">
+                    </div>
+                    <div>
+                        <label class="block text-gray-555 font-semibold mb-1">Hora Fin (HH:MM):</label>
+                        <input type="text" id="reschedule-end-time" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-brand-500 font-mono text-center font-bold" placeholder="09:30">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="pt-2">
+                <button onclick="submitRescheduleCita()" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 rounded-xl text-xs transition-colors shadow flex items-center justify-center space-x-1.5">
+                    <i class="fa-brands fa-whatsapp text-sm"></i>
+                    <span>Guardar y Notificar por WhatsApp</span>
                 </button>
             </div>
         </div>

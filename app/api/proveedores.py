@@ -61,7 +61,8 @@ def get_proveedores_mapa(
                 link_facebook=prov.link_facebook if prov.es_premium else None,
                 ciudad=prov.ciudad,
                 sector=prov.sector,
-                servicios_adicionales=prov.servicios_adicionales
+                servicios_adicionales=prov.servicios_adicionales,
+                google_calendar_link=prov.google_calendar_link if prov.es_premium else None
             )
         )
     return result
@@ -667,7 +668,15 @@ def get_agenda_config(
         db.commit()
         db.refresh(config)
         
-    return config
+    return proveedor_schemas.ConfiguracionAgendaResponse(
+        id=config.id,
+        proveedor_id=config.proveedor_id,
+        horarios_disponibilidad=config.horarios_disponibilidad,
+        duracion_turno=config.duracion_turno,
+        respuesta_automatica=config.respuesta_automatica,
+        created_at=config.created_at,
+        google_calendar_link=proveedor.google_calendar_link
+    )
 
 
 @router.put("/me/agenda-config", response_model=proveedor_schemas.ConfiguracionAgendaResponse)
@@ -705,10 +714,22 @@ def update_agenda_config(
         config.duracion_turno = config_in.duracion_turno
     if config_in.respuesta_automatica is not None:
         config.respuesta_automatica = config_in.respuesta_automatica
+    if config_in.google_calendar_link is not None:
+        proveedor.google_calendar_link = config_in.google_calendar_link
         
     db.commit()
     db.refresh(config)
-    return config
+    db.refresh(proveedor)
+    
+    return proveedor_schemas.ConfiguracionAgendaResponse(
+        id=config.id,
+        proveedor_id=config.proveedor_id,
+        horarios_disponibilidad=config.horarios_disponibilidad,
+        duracion_turno=config.duracion_turno,
+        respuesta_automatica=config.respuesta_automatica,
+        created_at=config.created_at,
+        google_calendar_link=proveedor.google_calendar_link
+    )
 
 
 @router.get("/me/citas", response_model=List[proveedor_schemas.CitaResponse])
@@ -937,5 +958,65 @@ def reservar_cita_public(
     db.add(nueva_cita)
     db.commit()
     db.refresh(nueva_cita)
+    
+    # Sincronización simulada con Google Calendar si el doctor configuró su cuenta/link
+    if proveedor.google_calendar_link:
+        print(f"📅 [Google Calendar Sync] Creando evento en Google Calendar del Dr. {proveedor.nombre_comercial}")
+        print(f"   Evento: Cita con {nueva_cita.paciente_nombre} ({nueva_cita.fecha} de {nueva_cita.hora_inicio} a {nueva_cita.hora_fin})")
+
     return nueva_cita
+
+
+@router.put("/me/citas/{cita_id}", response_model=proveedor_schemas.CitaResponse)
+def update_cita(
+    cita_id: str,
+    cita_in: proveedor_schemas.CitaUpdate,
+    current_user: models.UsuarioSistema = Depends(deps.get_current_provider),
+    db: Session = Depends(get_db)
+):
+    """
+    Permite al doctor reprogramar una cita o bloqueo de su agenda.
+    """
+    proveedor = db.query(models.ProveedorServicio).filter(
+        models.ProveedorServicio.usuario_id == current_user.id
+    ).first()
+    if not proveedor:
+        raise HTTPException(status_code=404, detail="Proveedor no encontrado")
+        
+    cita = db.query(models.CitaProveedor).filter(
+        models.CitaProveedor.id == cita_id,
+        models.CitaProveedor.proveedor_id == proveedor.id
+    ).first()
+    if not cita:
+        raise HTTPException(status_code=404, detail="Cita no encontrada")
+        
+    # Verificar solapamiento si se cambia el horario
+    if (cita_in.hora_inicio != cita.hora_inicio or 
+        cita_in.hora_fin != cita.hora_fin or 
+        cita_in.fecha != cita.fecha):
+        solapada = db.query(models.CitaProveedor).filter(
+            models.CitaProveedor.proveedor_id == proveedor.id,
+            models.CitaProveedor.fecha == cita_in.fecha,
+            models.CitaProveedor.id != cita.id,
+            models.CitaProveedor.hora_inicio < cita_in.hora_fin,
+            models.CitaProveedor.hora_fin > cita_in.hora_inicio
+        ).first()
+        if solapada:
+            raise HTTPException(status_code=400, detail="El horario seleccionado ya no está disponible o se solapa.")
+            
+    cita.fecha = cita_in.fecha
+    cita.hora_inicio = cita_in.hora_inicio
+    cita.hora_fin = cita_in.hora_fin
+    if cita_in.estado is not None:
+        cita.estado = cita_in.estado
+        
+    db.commit()
+    db.refresh(cita)
+
+    # Notificar en consola sincronización con Google Calendar
+    if proveedor.google_calendar_link:
+        print(f"📅 [Google Calendar Sync] Actualizando/Reprogramando evento en Google Calendar del Dr. {proveedor.nombre_comercial}")
+        print(f"   Evento Actualizado: Cita con {cita.paciente_nombre} ({cita.fecha} de {cita.hora_inicio} a {cita.hora_fin})")
+
+    return cita
 

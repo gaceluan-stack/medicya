@@ -123,6 +123,7 @@ class ProveedorServicio(Base):
     sector = Column(String(100), nullable=True)
     celular_whatsapp = Column(String(20), nullable=True)
     servicios_adicionales = Column(JSON, nullable=True)
+    google_calendar_link = Column(String(500), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relaciones
@@ -276,3 +277,7 @@ class CitaProveedor(Base):
     # Relaciones
     proveedor = relationship("ProveedorServicio", back_populates="citas")
     paciente = relationship("Paciente")
+
+    @property
+    def paciente_celular(self):
+        return self.paciente.celular_whatsapp if self.paciente else None
