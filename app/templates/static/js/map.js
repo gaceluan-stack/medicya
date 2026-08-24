@@ -485,7 +485,7 @@ function applyAdvancedFilters() {
 }
 
 // Clic al botón de contactar (Registra lead y abre WhatsApp con el mensaje personalizado de cotización)
-async function contactProviderWithQuote(id, name, phone, quoteMessage) {
+async function contactProviderWithQuote(id, name, phone, quoteMessage, bookingSlot = null, autoResponse = "") {
     const token = localStorage.getItem('token');
     if (!token) {
         alert("Para concretar tu cita y cotización, por favor regístrate primero.");
@@ -504,11 +504,15 @@ async function contactProviderWithQuote(id, name, phone, quoteMessage) {
         
         if (!response.ok) throw new Error(data.detail || "Error al contactar");
         
-        alert(`¡Cotización registrada en Medic YA!\nTe redirigiremos a WhatsApp.`);
-        
-        // Redirigir a WhatsApp con el texto codificado (usando window.location.href para evitar bloqueadores de popups en iPhone/Safari)
         const cleanPhone = formatEcuadorWhatsApp(phone);
-        window.location.href = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(quoteMessage)}`;
+        
+        if (bookingSlot) {
+            // Mostrar modal de éxito detallado con la auto-respuesta del doctor
+            showBookingSuccessModal(name, bookingSlot.date, bookingSlot.start, bookingSlot.end, autoResponse, cleanPhone, quoteMessage);
+        } else {
+            alert(`¡Cotización registrada en Medic YA!\nTe redirigiremos a WhatsApp.`);
+            window.location.href = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(quoteMessage)}`;
+        }
         
     } catch(err) {
         alert(err.message);
@@ -797,7 +801,7 @@ async function triggerWhatsAppQuote(providerId) {
     message += `\n💰 *TOTAL ESTIMADO:* $${total.toFixed(2)} USD\n\n`;
     message += `Por favor, confírmame tu disponibilidad para agendar. ¡Muchas gracias!`;
     
-    contactProviderWithQuote(prov.id, prov.nombre_comercial, prov.celular_whatsapp, message);
+    contactProviderWithQuote(prov.id, prov.nombre_comercial, prov.celular_whatsapp, message, selectedBookingSlot, doctorAutoResponse);
 }
 
 // --- FUNCIONES DE AGENDA PÚBLICA PARA PACIENTES (PREMIUM) ---
@@ -901,4 +905,52 @@ function toggleMobileView() {
         
         btn.innerHTML = `<i class="fa-solid fa-map-location-dot"></i> <span>Ver Mapa</span>`;
     }
+}
+
+function showBookingSuccessModal(doctorName, dateVal, startTime, endTime, autoResponse, cleanPhone, quoteMessage) {
+    document.getElementById('success-doctor-name').textContent = doctorName;
+    document.getElementById('success-booking-date').textContent = dateVal;
+    document.getElementById('success-booking-time').textContent = `${startTime} a ${endTime}`;
+    
+    const autoresponseBox = document.getElementById('success-autoresponse-box');
+    const autoresponseText = document.getElementById('success-autoresponse-text');
+    if (autoResponse) {
+        autoresponseText.textContent = autoResponse;
+        autoresponseBox.classList.remove('hidden');
+    } else {
+        autoresponseBox.classList.add('hidden');
+    }
+    
+    const waBtn = document.getElementById('success-whatsapp-btn');
+    waBtn.onclick = function() {
+        window.location.href = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(quoteMessage)}`;
+    };
+    
+    document.getElementById('booking-success-modal').classList.remove('hidden');
+}
+
+function closeBookingSuccessModal() {
+    document.getElementById('booking-success-modal').classList.add('hidden');
+}
+
+function formatGoogleCalendarUrl(link) {
+    if (!link) return "";
+    let url = link.trim();
+    
+    // Si contiene '@' y no tiene http, es un correo
+    if (url.includes('@') && !url.toLowerCase().startsWith('http')) {
+        return `https://calendar.google.com/calendar/embed?src=${encodeURIComponent(url)}&ctz=America%2FGuayaquil`;
+    }
+    
+    // Si es enlace estándar de compartir, convertir a embed
+    if (url.includes('calendar.google.com') && !url.includes('embed') && !url.includes('appointments/schedules')) {
+        try {
+            const urlObj = new URL(url);
+            const cid = urlObj.searchParams.get('cid') || urlObj.searchParams.get('src');
+            if (cid) {
+                return `https://calendar.google.com/calendar/embed?src=${encodeURIComponent(cid)}&ctz=America%2FGuayaquil`;
+            }
+        } catch(e) {}
+    }
+    return url;
 }

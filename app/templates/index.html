@@ -614,10 +614,55 @@
                 Entendido
             </button>
         </div>
+    <!-- Modal de Reserva Exitosa de Cita -->
+    <div id="booking-success-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl border border-gray-150 animate-fade-in relative font-sans">
+            <button onclick="closeBookingSuccessModal()" class="absolute top-5 right-5 text-gray-400 hover:text-gray-850 transition-colors">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            
+            <div class="text-center space-y-2">
+                <div class="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-2xl shadow-inner animate-bounce">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+                <h3 class="text-base font-bold text-gray-900">¡Tu cita ha sido apartada!</h3>
+                <p class="text-[10px] text-gray-555 leading-relaxed">El turno seleccionado ha sido reservado con éxito en la agenda del profesional.</p>
+            </div>
+            
+            <div class="bg-gray-50 border border-gray-150 rounded-2xl p-4 text-xs space-y-2 text-gray-700">
+                <p class="font-semibold text-gray-900 border-b border-gray-200 pb-1.5 flex items-center">
+                    <i class="fa-solid fa-calendar-day text-brand-500 mr-2"></i> Detalles de la Reserva
+                </p>
+                <div class="space-y-1 text-[11px]">
+                    <p><span class="text-gray-450 font-medium">Médico:</span> <strong id="success-doctor-name" class="text-gray-800"></strong></p>
+                    <p><span class="text-gray-450 font-medium">Fecha:</span> <strong id="success-booking-date" class="text-gray-800"></strong></p>
+                    <p><span class="text-gray-450 font-medium">Horario:</span> <strong id="success-booking-time" class="text-gray-800"></strong></p>
+                </div>
+            </div>
+
+            <!-- Auto-Respuesta del Profesional -->
+            <div id="success-autoresponse-box" class="bg-brand-50/50 border border-brand-200 rounded-2xl p-4 text-xs space-y-1.5 hidden">
+                <p class="font-bold text-brand-800 flex items-center text-[10px] uppercase tracking-wider">
+                    <i class="fa-solid fa-comment-dots text-brand-600 mr-1.5"></i> Mensaje del Profesional:
+                </p>
+                <blockquote id="success-autoresponse-text" class="text-gray-650 italic text-[11px] leading-relaxed pl-2 border-l-2 border-brand-300">
+                </blockquote>
+            </div>
+            
+            <div class="space-y-2 pt-2">
+                <button id="success-whatsapp-btn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl text-xs transition-colors shadow flex items-center justify-center space-x-1.5">
+                    <i class="fa-brands fa-whatsapp text-sm"></i>
+                    <span>Chatear y Confirmar por WhatsApp</span>
+                </button>
+                <button onclick="closeBookingSuccessModal()" class="w-full bg-gray-100 hover:bg-gray-250 text-gray-600 font-bold py-2 rounded-xl text-xs transition-colors border border-gray-200">
+                    Cerrar y ver mapa
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- Frontend JS logic -->
-    <script src="/static/js/map.js?v=1.1.5"></script>
+    <script src="/static/js/map.js?v=1.1.7"></script>
     <script src="/static/js/main.js?v=1.1.4"></script>
 
     <!-- PWA Install & Service Worker Logic -->

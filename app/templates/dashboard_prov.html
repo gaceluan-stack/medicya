@@ -407,6 +407,14 @@
                                 Guardar Enlace Calendar
                             </button>
                         </div>
+
+                        <!-- Google Calendar Live Preview -->
+                        <div id="calendar-preview-box" class="mt-3 hidden bg-gray-50 border border-gray-200 p-2.5 rounded-xl">
+                            <p class="text-[9px] font-bold text-gray-500 mb-1.5 flex items-center"><i class="fa-brands fa-google text-brand-600 mr-1.5"></i> Vista Previa de tu Calendario:</p>
+                            <div class="w-full aspect-[4/3] rounded-lg overflow-hidden border border-gray-200 bg-white">
+                                <iframe id="calendar-preview-iframe" class="w-full h-full" style="border:0;" frameborder="0"></iframe>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Horarios del Día / Slots -->
@@ -1143,8 +1151,18 @@
                     agendaConfig = await configRes.json();
                     document.getElementById('agenda-duracion').value = agendaConfig.duracion_turno;
                     document.getElementById('agenda-autoresponse').value = agendaConfig.respuesta_automatica || "";
-                    document.getElementById('agenda-google-calendar').value = agendaConfig.google_calendar_link || "";
+                    const calLink = agendaConfig.google_calendar_link || "";
+                    document.getElementById('agenda-google-calendar').value = calLink;
                     renderAvailabilityDays(agendaConfig.horarios_disponibilidad || {});
+                    
+                    const previewBox = document.getElementById('calendar-preview-box');
+                    const previewIframe = document.getElementById('calendar-preview-iframe');
+                    if (calLink) {
+                        previewIframe.src = formatGoogleCalendarUrl(calLink);
+                        previewBox.classList.remove('hidden');
+                    } else {
+                        previewBox.classList.add('hidden');
+                    }
                 }
 
                 // 2. Cargar Citas
@@ -1454,6 +1472,28 @@
             } catch(e) {
                 alert(e.message);
             }
+        }
+
+        function formatGoogleCalendarUrl(link) {
+            if (!link) return "";
+            let url = link.trim();
+            
+            // Si contiene '@' y no tiene http, es un correo
+            if (url.includes('@') && !url.toLowerCase().startsWith('http')) {
+                return `https://calendar.google.com/calendar/embed?src=${encodeURIComponent(url)}&ctz=America%2FGuayaquil`;
+            }
+            
+            // Si es enlace estándar de compartir, convertir a embed
+            if (url.includes('calendar.google.com') && !url.includes('embed') && !url.includes('appointments/schedules')) {
+                try {
+                    const urlObj = new URL(url);
+                    const cid = urlObj.searchParams.get('cid') || urlObj.searchParams.get('src');
+                    if (cid) {
+                        return `https://calendar.google.com/calendar/embed?src=${encodeURIComponent(cid)}&ctz=America%2FGuayaquil`;
+                    }
+                } catch(e) {}
+            }
+            return url;
         }
 
         window.addEventListener('load', fetchDashboardData);
