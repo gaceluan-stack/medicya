@@ -106,6 +106,7 @@ class CitaCreate(BaseModel):
     hora_inicio: str = Field(..., pattern=r"^\d{2}:\d{2}$") # HH:MM
     hora_fin: str = Field(..., pattern=r"^\d{2}:\d{2}$") # HH:MM
     estado: str = Field(default="RESERVADA")
+    servicios: Optional[str] = None
 
 
 class CitaUpdate(BaseModel):
@@ -113,6 +114,7 @@ class CitaUpdate(BaseModel):
     hora_inicio: str = Field(..., pattern=r"^\d{2}:\d{2}$") # HH:MM
     hora_fin: str = Field(..., pattern=r"^\d{2}:\d{2}$") # HH:MM
     estado: Optional[str] = Field(None)
+    servicios: Optional[str] = None
 
 
 class CitaResponse(BaseModel):
@@ -124,6 +126,7 @@ class CitaResponse(BaseModel):
     hora_inicio: str
     hora_fin: str
     estado: str
+    servicios: Optional[str] = None
     created_at: datetime
     paciente_celular: Optional[str] = None
 

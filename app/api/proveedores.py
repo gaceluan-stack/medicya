@@ -953,7 +953,8 @@ def reservar_cita_public(
         fecha=cita_in.fecha,
         hora_inicio=cita_in.hora_inicio,
         hora_fin=cita_in.hora_fin,
-        estado="RESERVADA"
+        estado="RESERVADA",
+        servicios=cita_in.servicios
     )
     db.add(nueva_cita)
     db.commit()
@@ -1009,6 +1010,8 @@ def update_cita(
     cita.hora_fin = cita_in.hora_fin
     if cita_in.estado is not None:
         cita.estado = cita_in.estado
+    if cita_in.servicios is not None:
+        cita.servicios = cita_in.servicios
         
     db.commit()
     db.refresh(cita)

@@ -21,6 +21,15 @@ except Exception as e:
     # Ignorar si ya existe
     pass
 
+# Migración rápida: agregar columna servicios a la tabla citas_proveedores si no existe
+try:
+    from sqlalchemy import text
+    with engine.begin() as conn:
+        conn.execute(text("ALTER TABLE citas_proveedores ADD COLUMN servicios VARCHAR(500);"))
+        print("Migración: Columna 'servicios' agregada a la tabla 'citas_proveedores'")
+except Exception as e:
+    pass
+
 # Migraciones de redes sociales y clasificación para proveedores y pacientes
 try:
     from sqlalchemy import text

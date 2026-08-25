@@ -272,6 +272,7 @@ class CitaProveedor(Base):
     hora_inicio = Column(String(5), nullable=False) # Formato HH:MM
     hora_fin = Column(String(5), nullable=False) # Formato HH:MM
     estado = Column(String(50), default="RESERVADA") # RESERVADA, BLOQUEADA
+    servicios = Column(String(500), nullable=True) # Lista de servicios cotizados
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relaciones

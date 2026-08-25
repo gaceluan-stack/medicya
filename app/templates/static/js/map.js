@@ -714,6 +714,21 @@ async function triggerWhatsAppQuote(providerId) {
     const prov = loadedProviders[providerId];
     if (!prov) return;
     
+    const checkboxes = document.querySelectorAll('input[type="checkbox"][id^="svc-"]');
+    let selected = [];
+    let total = 0;
+    
+    checkboxes.forEach(cb => {
+        if (cb.checked) {
+            const name = cb.getAttribute('data-name');
+            const price = parseFloat(cb.getAttribute('data-price'));
+            selected.push({ name, price });
+            total += price;
+        }
+    });
+    
+    const selectedServices = selected.map(s => s.name).join(', ') || null;
+    
     // Si seleccionó turno y el proveedor es premium, intentar reservar en la base de datos
     if (prov.es_premium && selectedBookingSlot) {
         const token = localStorage.getItem('token');
@@ -735,7 +750,8 @@ async function triggerWhatsAppQuote(providerId) {
                     fecha: selectedBookingSlot.date,
                     hora_inicio: selectedBookingSlot.start,
                     hora_fin: selectedBookingSlot.end,
-                    estado: 'RESERVADA'
+                    estado: 'RESERVADA',
+                    servicios: selectedServices
                 })
             });
             if (!resCita.ok) {
@@ -747,19 +763,6 @@ async function triggerWhatsAppQuote(providerId) {
             return;
         }
     }
-    
-    const checkboxes = document.querySelectorAll('input[type="checkbox"][id^="svc-"]');
-    let selected = [];
-    let total = 0;
-    
-    checkboxes.forEach(cb => {
-        if (cb.checked) {
-            const name = cb.getAttribute('data-name');
-            const price = parseFloat(cb.getAttribute('data-price'));
-            selected.push({ name, price });
-            total += price;
-        }
-    });
     
     // Formatear el mensaje
     let message = "";

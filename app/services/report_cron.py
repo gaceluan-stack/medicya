@@ -10,7 +10,7 @@ from app.services.email import send_email_notification
 async def send_all_doctors_today_reports(db: Session = None):
     """
     Envía un resumen de las citas de hoy a las 7:00 PM por WhatsApp y Correo
-    a todos los doctores Premium.
+    a todos los doctores Premium, incluyendo nombres del paciente y servicios deseados.
     """
     should_close_db = False
     if db is None:
@@ -49,10 +49,17 @@ async def send_all_doctors_today_reports(db: Session = None):
             else:
                 wa_message += "📋 *Pacientes Atendidos:*\n"
                 for index, cita in enumerate(citas, 1):
-                    paciente = cita.paciente_nombre
-                    celular = cita.paciente_celular
-                    celular_str = f" ({celular})" if celular else ""
-                    wa_message += f"{index}. 👤 *{cita.hora_inicio} a {cita.hora_fin}:* {paciente}{celular_str}\n"
+                    if cita.paciente:
+                        paciente_info = f"{cita.paciente.nombres} {cita.paciente.apellidos} ({cita.paciente.usuario.email if cita.paciente.usuario else ''})"
+                        celular = cita.paciente.celular_whatsapp
+                    else:
+                        paciente_info = cita.paciente_nombre
+                        celular = cita.paciente_celular
+                        
+                    celular_str = f" - Cel: {celular}" if celular else ""
+                    servicios_str = f"\n   💼 *Servicios:* {cita.servicios}" if cita.servicios else ""
+                    
+                    wa_message += f"{index}. 👤 *{cita.hora_inicio} a {cita.hora_fin}:* {paciente_info}{celular_str}{servicios_str}\n"
                 
                 wa_message += f"\n📊 *Total:* {len(citas)} pacientes programados hoy."
                 
@@ -69,10 +76,17 @@ async def send_all_doctors_today_reports(db: Session = None):
             else:
                 email_body += "<ul>"
                 for cita in citas:
-                    paciente = cita.paciente_nombre
-                    celular = cita.paciente_celular
-                    celular_str = f" ({celular})" if celular else ""
-                    email_body += f"  <li><strong>{cita.hora_inicio} a {cita.hora_fin}:</strong> {paciente}{celular_str}</li>"
+                    if cita.paciente:
+                        paciente_info = f"{cita.paciente.nombres} {cita.paciente.apellidos} ({cita.paciente.usuario.email if cita.paciente.usuario else ''})"
+                        celular = cita.paciente.celular_whatsapp
+                    else:
+                        paciente_info = cita.paciente_nombre
+                        celular = cita.paciente_celular
+                        
+                    celular_str = f" - Cel: {celular}" if celular else ""
+                    servicios_str = f" | <strong>Servicios:</strong> {cita.servicios}" if cita.servicios else ""
+                    
+                    email_body += f"  <li><strong>{cita.hora_inicio} a {cita.hora_fin}:</strong> {paciente_info}{celular_str}{servicios_str}</li>"
                 email_body += "</ul>"
                 email_body += f"<p><strong>Total de pacientes hoy:</strong> {len(citas)}</p>"
                 
@@ -100,7 +114,7 @@ async def send_all_doctors_today_reports(db: Session = None):
 async def send_all_doctors_tomorrow_reports(db: Session = None):
     """
     Envía un reporte diario por WhatsApp a todos los doctores Premium
-    con su agenda para el día siguiente a las 8:00 PM.
+    con su agenda para el día siguiente a las 8:00 PM, incluyendo nombres y servicios.
     """
     should_close_db = False
     if db is None:
@@ -142,11 +156,18 @@ async def send_all_doctors_tomorrow_reports(db: Session = None):
                 for index, cita in enumerate(citas, 1):
                     tipo = "Cita" if cita.estado == "RESERVADA" else "Bloqueo"
                     emoji = "👤" if cita.estado == "RESERVADA" else "🔒"
-                    paciente = cita.paciente_nombre
-                    celular = cita.paciente_celular
-                    celular_str = f" ({celular})" if celular else ""
                     
-                    message += f"{index}. {emoji} *{cita.hora_inicio} a {cita.hora_fin}:* {tipo} - {paciente}{celular_str}\n"
+                    if cita.paciente:
+                        paciente_info = f"{cita.paciente.nombres} {cita.paciente.apellidos} ({cita.paciente.usuario.email if cita.paciente.usuario else ''})"
+                        celular = cita.paciente.celular_whatsapp
+                    else:
+                        paciente_info = cita.paciente_nombre
+                        celular = cita.paciente_celular
+                        
+                    celular_str = f" - Cel: {celular}" if celular else ""
+                    servicios_str = f"\n   💼 *Servicios:* {cita.servicios}" if (cita.estado == "RESERVADA" and cita.servicios) else ""
+                    
+                    message += f"{index}. {emoji} *{cita.hora_inicio} a {cita.hora_fin}:* {tipo} - {paciente_info}{celular_str}{servicios_str}\n"
                 
                 total_citas = sum(1 for c in citas if c.estado == "RESERVADA")
                 total_bloqueos = sum(1 for c in citas if c.estado == "BLOQUEADA")

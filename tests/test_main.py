@@ -1127,6 +1127,26 @@ def test_daily_report_cron():
     db.add(prov)
     db.flush()
     
+    # Sembrar Paciente
+    user_pac = models.UsuarioSistema(
+        email="paciente_test_report@medicya.com",
+        rol=models.RolUsuario.PACIENTE,
+        estado=models.EstadoUsuario.ACTIVO
+    )
+    db.add(user_pac)
+    db.flush()
+    
+    pac = models.Paciente(
+        usuario_id=user_pac.id,
+        nombres="Juan Carlos",
+        apellidos="Pérez Delgado",
+        cedula="1712121212",
+        celular_whatsapp="593988888888",
+        origen_informacion=models.CanalAtribucion.INSTAGRAM
+    )
+    db.add(pac)
+    db.flush()
+    
     # Calcular fechas en Ecuador
     from datetime import datetime, timedelta, timezone
     tz_ecuador = timezone(timedelta(hours=-5))
@@ -1136,19 +1156,23 @@ def test_daily_report_cron():
     # 2. Agregar cita para hoy y otra para mañana
     cita_hoy = models.CitaProveedor(
         proveedor_id=prov.id,
-        paciente_nombre="Paciente Test Hoy",
+        paciente_id=pac.id,
+        paciente_nombre="Juan Carlos Pérez Delgado",
         fecha=today_date,
         hora_inicio="07:30",
         hora_fin="08:00",
-        estado="RESERVADA"
+        estado="RESERVADA",
+        servicios="Consulta Médica General, Electrocardiograma (ECG)"
     )
     cita_manana = models.CitaProveedor(
         proveedor_id=prov.id,
-        paciente_nombre="Paciente Test Manana",
+        paciente_id=pac.id,
+        paciente_nombre="Juan Carlos Pérez Delgado",
         fecha=tomorrow_date,
         hora_inicio="08:30",
         hora_fin="09:00",
-        estado="RESERVADA"
+        estado="RESERVADA",
+        servicios="Chequeo Clínico Preventivo"
     )
     db.add(cita_hoy)
     db.add(cita_manana)
@@ -1164,6 +1188,8 @@ def test_daily_report_cron():
     # Limpiar
     db.delete(cita_hoy)
     db.delete(cita_manana)
+    db.delete(pac)
+    db.delete(user_pac)
     db.delete(prov)
     db.delete(user_prov)
     db.commit()
