@@ -727,7 +727,8 @@ async function triggerWhatsAppQuote(providerId) {
         }
     });
     
-    const selectedServices = selected.map(s => s.name).join(', ') || null;
+    const servicesList = selected.map(s => `${s.name} ($${s.price.toFixed(2)})`).join(', ');
+    const selectedServices = servicesList ? `${servicesList} (Total: $${total.toFixed(2)})` : null;
     
     // Si seleccionó turno y el proveedor es premium, intentar reservar en la base de datos
     if (prov.es_premium && selectedBookingSlot) {

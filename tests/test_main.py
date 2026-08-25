@@ -1162,7 +1162,7 @@ def test_daily_report_cron():
         hora_inicio="07:30",
         hora_fin="08:00",
         estado="RESERVADA",
-        servicios="Consulta Médica General, Electrocardiograma (ECG)"
+        servicios="Consulta Médica General ($40.00), Electrocardiograma (ECG) ($25.00) (Total: $65.00)"
     )
     cita_manana = models.CitaProveedor(
         proveedor_id=prov.id,
@@ -1172,7 +1172,7 @@ def test_daily_report_cron():
         hora_inicio="08:30",
         hora_fin="09:00",
         estado="RESERVADA",
-        servicios="Chequeo Clínico Preventivo"
+        servicios="Chequeo Clínico Preventivo ($50.00) (Total: $50.00)"
     )
     db.add(cita_hoy)
     db.add(cita_manana)
