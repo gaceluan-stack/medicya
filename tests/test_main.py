@@ -1127,32 +1127,43 @@ def test_daily_report_cron():
     db.add(prov)
     db.flush()
     
-    # Calcular fecha de mañana en Ecuador
+    # Calcular fechas en Ecuador
     from datetime import datetime, timedelta, timezone
     tz_ecuador = timezone(timedelta(hours=-5))
+    today_date = datetime.now(tz_ecuador).strftime("%Y-%m-%d")
     tomorrow_date = (datetime.now(tz_ecuador) + timedelta(days=1)).strftime("%Y-%m-%d")
     
-    # 2. Agregar cita para mañana
-    cita = models.CitaProveedor(
+    # 2. Agregar cita para hoy y otra para mañana
+    cita_hoy = models.CitaProveedor(
         proveedor_id=prov.id,
-        paciente_nombre="Paciente Test Report",
+        paciente_nombre="Paciente Test Hoy",
+        fecha=today_date,
+        hora_inicio="07:30",
+        hora_fin="08:00",
+        estado="RESERVADA"
+    )
+    cita_manana = models.CitaProveedor(
+        proveedor_id=prov.id,
+        paciente_nombre="Paciente Test Manana",
         fecha=tomorrow_date,
         hora_inicio="08:30",
         hora_fin="09:00",
         estado="RESERVADA"
     )
-    db.add(cita)
+    db.add(cita_hoy)
+    db.add(cita_manana)
     db.commit()
     
-    # 3. Ejecutar la función de reportes
-    from app.services.report_cron import send_all_doctors_daily_reports
+    # 3. Ejecutar funciones de reportes
+    from app.services.report_cron import send_all_doctors_today_reports, send_all_doctors_tomorrow_reports
     import asyncio
     
-    # send_all_doctors_daily_reports es asíncrona
-    asyncio.run(send_all_doctors_daily_reports(db))
+    asyncio.run(send_all_doctors_today_reports(db))
+    asyncio.run(send_all_doctors_tomorrow_reports(db))
     
     # Limpiar
-    db.delete(cita)
+    db.delete(cita_hoy)
+    db.delete(cita_manana)
     db.delete(prov)
     db.delete(user_prov)
     db.commit()
