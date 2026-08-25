@@ -622,6 +622,13 @@ function selectProviderForRouting(id) {
         `;
     }
 
+    // Calcular fecha de hoy en formato YYYY-MM-DD
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const todayStr = `${yyyy}-${mm}-${dd}`;
+
     document.getElementById('detail-card-body').innerHTML = `
         <div class="space-y-4">
             <!-- Header Card -->
@@ -640,7 +647,7 @@ function selectProviderForRouting(id) {
             <!-- Cotizador de servicios -->
             <div class="space-y-3">
                 <h4 class="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center">
-                    <i class="fa-solid fa-calculator text-brand-500 mr-2"></i> Servicios y Presupuesto
+                     <i class="fa-solid fa-calculator text-brand-500 mr-2"></i> Servicios y Presupuesto
                 </h4>
                 <div class="space-y-2">
                     ${servicesHtml}
@@ -656,12 +663,14 @@ function selectProviderForRouting(id) {
                 
                 <div class="space-y-2">
                     <div class="flex items-center space-x-2">
-                        <input type="date" id="booking-date" class="w-full bg-white border border-gray-250 rounded-xl px-3 py-1.5 text-xs text-gray-800 focus:outline-none focus:border-brand-500 font-medium" onchange="loadPublicAvailability('${prov.id}')">
+                        <input type="date" id="booking-date" value="${todayStr}" min="${todayStr}" class="w-full bg-white border border-gray-250 rounded-xl px-3 py-1.5 text-xs text-gray-800 focus:outline-none focus:border-brand-500 font-medium" onchange="loadPublicAvailability('${prov.id}')">
                     </div>
                     
                     <!-- Slots Container -->
                     <div id="public-slots-container" class="grid grid-cols-3 gap-2 max-h-[150px] overflow-y-auto pr-1">
-                        <p class="col-span-full text-[9px] text-gray-400 text-center py-2">Selecciona una fecha para ver disponibilidad</p>
+                        <div class="col-span-full py-4 text-center text-gray-400 animate-pulse text-[10px]">
+                            Cargando turnos disponibles...
+                        </div>
                     </div>
                 </div>
             </div>
@@ -690,6 +699,11 @@ function selectProviderForRouting(id) {
 
     // Calcular cotización inicial
     recalculateQuote(prov.id);
+
+    // Cargar disponibilidad automáticamente para hoy si es premium
+    if (prov.es_premium) {
+        loadPublicAvailability(prov.id);
+    }
 }
 
 // Recalcula el precio total sumando los checkboxes marcados
