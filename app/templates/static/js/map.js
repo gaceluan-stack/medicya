@@ -654,19 +654,7 @@ function selectProviderForRouting(id) {
                     <i class="fa-solid fa-calendar-check text-brand-500 mr-2"></i> Reservar Cita (Premium)
                 </h4>
                 
-                ${prov.google_calendar_link ? `
-                <div class="bg-teal-50/50 border border-teal-200 rounded-xl p-3 flex flex-col space-y-2 mb-2">
-                    <p class="text-[10px] text-teal-800 font-bold leading-tight flex items-center"><i class="fa-brands fa-google text-brand-600 mr-1.5 text-xs"></i> Calendario del Profesional:</p>
-                    
-                    <a href="${formatGoogleCalendarUrl(prov.google_calendar_link)}" target="_blank" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-2 px-3 rounded-xl text-[10px] text-center transition-all shadow flex items-center justify-center space-x-1.5">
-                        <i class="fa-solid fa-up-right-from-square"></i>
-                        <span>Ver Agenda en Google Calendar</span>
-                    </a>
-                </div>
-                ` : ''}
-
                 <div class="space-y-2">
-                    ${prov.google_calendar_link ? `<label class="block text-[9px] text-gray-400 font-semibold mb-1 uppercase tracking-wider">O reserva directo en Medic YA:</label>` : ''}
                     <div class="flex items-center space-x-2">
                         <input type="date" id="booking-date" class="w-full bg-white border border-gray-250 rounded-xl px-3 py-1.5 text-xs text-gray-800 focus:outline-none focus:border-brand-500 font-medium" onchange="loadPublicAvailability('${prov.id}')">
                     </div>
