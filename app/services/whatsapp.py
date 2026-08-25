@@ -58,3 +58,41 @@ async def send_whatsapp_notification(
     except Exception as e:
         logger.error(f"Error al enviar notificación de WhatsApp: {str(e)}")
         return False
+
+async def send_custom_whatsapp(to_phone: str, message: str) -> bool:
+    """
+    Envía un mensaje de WhatsApp personalizado (texto libre) a un destinatario.
+    """
+    payload = {
+        "messaging_product": "whatsapp",
+        "to": to_phone,
+        "type": "text",
+        "text": {
+            "body": message
+        }
+    }
+    
+    logger.info(f"Enviando WhatsApp personalizado a {to_phone}: {message}")
+    
+    try:
+        print(f"\n--- [WHATSAPP OUTGOING CUSTOM] TO: {to_phone} ---\n{message}\n---------------------------------------\n")
+    except UnicodeEncodeError:
+        clean_message = message.encode('ascii', errors='replace').decode('ascii')
+        print(f"\n--- [WHATSAPP OUTGOING CUSTOM] TO: {to_phone} ---\n{clean_message}\n---------------------------------------\n")
+        
+    if "mock" in settings.WHATSAPP_API_URL:
+        return True
+        
+    try:
+        async with httpx.AsyncClient() as client:
+            headers = {"Authorization": f"Bearer {settings.WHATSAPP_TOKEN}"}
+            response = await client.post(
+                settings.WHATSAPP_API_URL,
+                json=payload,
+                headers=headers,
+                timeout=5.0
+            )
+            return response.status_code in [200, 201]
+    except Exception as e:
+        logger.error(f"Error al enviar WhatsApp personalizado: {str(e)}")
+        return False

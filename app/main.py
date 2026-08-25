@@ -110,6 +110,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.on_event("startup")
+async def startup_event():
+    import asyncio
+    from app.services.report_cron import start_daily_report_scheduler
+    asyncio.create_task(start_daily_report_scheduler())
+    print("[FastAPI Startup] Programador de reporte diario iniciado.")
+
 # 1. Configurar directorios para plantillas e interfaces estáticas
 templates_dir = os.path.join(os.path.dirname(__file__), "templates")
 static_dir = os.path.join(templates_dir, "static")

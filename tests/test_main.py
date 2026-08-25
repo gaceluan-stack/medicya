@@ -1099,4 +1099,64 @@ def test_agenda_and_citas():
     assert res_reprog.json()["hora_fin"] == "10:00"
 
 
+def test_daily_report_cron():
+    db = TestingSessionLocal()
+    
+    # 1. Sembrar Proveedor Premium
+    user_prov = models.UsuarioSistema(
+        email="doctor_premium_report@medicya.com",
+        password_hash=deps.get_password_hash("docpassword"),
+        rol=models.RolUsuario.PROVEEDOR,
+        estado=models.EstadoUsuario.ACTIVO
+    )
+    db.add(user_prov)
+    db.flush()
+    
+    prov = models.ProveedorServicio(
+        usuario_id=user_prov.id,
+        ruc_cedula="1788776655001",
+        nombre_comercial="Dr. Report Premium",
+        categoria=models.CategoriaProveedor.DOCTORES,
+        latitud=-0.22,
+        longitud=-78.52,
+        precio_consulta=40.00,
+        membresia_fija=15.00,
+        es_premium=True,
+        celular_whatsapp="593999999999"
+    )
+    db.add(prov)
+    db.flush()
+    
+    # Calcular fecha de mañana en Ecuador
+    from datetime import datetime, timedelta, timezone
+    tz_ecuador = timezone(timedelta(hours=-5))
+    tomorrow_date = (datetime.now(tz_ecuador) + timedelta(days=1)).strftime("%Y-%m-%d")
+    
+    # 2. Agregar cita para mañana
+    cita = models.CitaProveedor(
+        proveedor_id=prov.id,
+        paciente_nombre="Paciente Test Report",
+        fecha=tomorrow_date,
+        hora_inicio="08:30",
+        hora_fin="09:00",
+        estado="RESERVADA"
+    )
+    db.add(cita)
+    db.commit()
+    
+    # 3. Ejecutar la función de reportes
+    from app.services.report_cron import send_all_doctors_daily_reports
+    import asyncio
+    
+    # send_all_doctors_daily_reports es asíncrona
+    asyncio.run(send_all_doctors_daily_reports(db))
+    
+    # Limpiar
+    db.delete(cita)
+    db.delete(prov)
+    db.delete(user_prov)
+    db.commit()
+    db.close()
+
+
 
