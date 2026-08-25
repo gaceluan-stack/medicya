@@ -656,16 +656,11 @@ function selectProviderForRouting(id) {
                 
                 ${prov.google_calendar_link ? `
                 <div class="bg-teal-50/50 border border-teal-200 rounded-xl p-3 flex flex-col space-y-2 mb-2">
-                    <p class="text-[10px] text-teal-800 font-bold leading-tight flex items-center"><i class="fa-brands fa-google text-brand-600 mr-1.5 text-xs"></i> Disponibilidad en Google Calendar:</p>
+                    <p class="text-[10px] text-teal-800 font-bold leading-tight flex items-center"><i class="fa-brands fa-google text-brand-600 mr-1.5 text-xs"></i> Calendario del Profesional:</p>
                     
-                    <!-- Iframe para ver el calendario en tiempo real -->
-                    <div class="w-full rounded-xl overflow-hidden border border-gray-200 shadow-sm bg-white h-[280px]">
-                        <iframe src="${formatGoogleCalendarUrl(prov.google_calendar_link)}" class="w-full h-full" style="border:0;" frameborder="0" scrolling="yes"></iframe>
-                    </div>
-                    
-                    <a href="${formatGoogleCalendarUrl(prov.google_calendar_link)}" target="_blank" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-1.5 px-3 rounded-lg text-[9px] text-center transition-all shadow flex items-center justify-center space-x-1.5">
-                        <i class="fa-solid fa-up-right-from-square text-[9px]"></i>
-                        <span>Abrir en Pantalla Completa</span>
+                    <a href="${formatGoogleCalendarUrl(prov.google_calendar_link)}" target="_blank" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-2 px-3 rounded-xl text-[10px] text-center transition-all shadow flex items-center justify-center space-x-1.5">
+                        <i class="fa-solid fa-up-right-from-square"></i>
+                        <span>Ver Agenda en Google Calendar</span>
                     </a>
                 </div>
                 ` : ''}
