@@ -79,6 +79,9 @@
             border: none !important;
             box-shadow: none !important;
         }
+        .leaflet-tile {
+            filter: grayscale(100%) brightness(104%) contrast(90%);
+        }
     </style>
 </head>
 <body class="text-gray-700 overflow-hidden h-screen flex flex-col">
@@ -662,7 +665,7 @@
     </div>
 
     <!-- Frontend JS logic -->
-    <script src="/static/js/map.js?v=1.1.11"></script>
+    <script src="/static/js/map.js?v=1.1.12"></script>
     <script src="/static/js/main.js?v=1.1.4"></script>
 
     <!-- PWA Install & Service Worker Logic -->

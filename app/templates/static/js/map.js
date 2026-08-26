@@ -81,11 +81,10 @@ async function initMap() {
     // 2. Instanciar mapa centrado
     map = L.map('map').setView(userCoords, 14);
     
-    // 3. Cargar CartoDB Positron (Fondo blanco premium, sin restaurantes ni POIs locales)
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        subdomains: 'abcd',
-        maxZoom: 20
+    // 3. Cargar OpenStreetMap estándar (con filtro CSS en index.html para tono gris premium)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19
     }).addTo(map);
     
     // 4. Agregar pin del usuario
