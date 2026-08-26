@@ -1076,11 +1076,9 @@ def debug_citas(
     db: Session = Depends(get_db)
 ):
     if fecha and hora_inicio and hora_fin and proveedor_id:
-        import datetime as dt_mod
-        dt_val = dt_mod.datetime.strptime(fecha, "%Y-%m-%d").date()
         solapada = db.query(models.CitaProveedor).filter(
             models.CitaProveedor.proveedor_id == proveedor_id,
-            models.CitaProveedor.fecha == dt_val,
+            models.CitaProveedor.fecha == fecha,
             models.CitaProveedor.hora_inicio < hora_fin,
             models.CitaProveedor.hora_fin > hora_inicio
         ).all()
