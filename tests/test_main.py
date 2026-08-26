@@ -990,7 +990,7 @@ def test_agenda_and_citas():
     # 5. POST /me/citas (Crear bloqueo manual)
     cita_payload = {
         "paciente_nombre": "Bloqueo Almuerzo",
-        "fecha": "2026-08-24", # Es lunes
+        "fecha": "2026-08-31", # Es lunes
         "hora_inicio": "10:00",
         "hora_fin": "11:00",
         "estado": "BLOQUEADA"
@@ -1003,8 +1003,8 @@ def test_agenda_and_citas():
     assert res_add_cita.status_code == 200
     cita_id = res_add_cita.json()["id"]
     
-    # 6. GET public disponibilidad para la fecha de lunes 2026-08-24
-    res_disp = client.get(f"/api/proveedores/{prov_id}/agenda-disponibilidad?fecha=2026-08-24")
+    # 6. GET public disponibilidad para la fecha de lunes 2026-08-31
+    res_disp = client.get(f"/api/proveedores/{prov_id}/agenda-disponibilidad?fecha=2026-08-31")
     assert res_disp.status_code == 200
     slots = res_disp.json()["slots"]
     assert len(slots) == 4
@@ -1033,7 +1033,7 @@ def test_agenda_and_citas():
         f"/api/proveedores/{prov_id}/reservar-cita",
         json={
             "paciente_nombre": "Pedro Sánchez",
-            "fecha": "2026-08-24",
+            "fecha": "2026-08-31",
             "hora_inicio": "08:00",
             "hora_fin": "09:00",
             "estado": "RESERVADA"
@@ -1043,7 +1043,7 @@ def test_agenda_and_citas():
     assert res_reserve.status_code == 200
     
     # Volver a verificar disponibilidad pública (ahora 08:00 debe ser ocupado)
-    res_disp2 = client.get(f"/api/proveedores/{prov_id}/agenda-disponibilidad?fecha=2026-08-24")
+    res_disp2 = client.get(f"/api/proveedores/{prov_id}/agenda-disponibilidad?fecha=2026-08-31")
     slots2 = res_disp2.json()["slots"]
     assert slots2[0]["hora_inicio"] == "08:00"
     assert slots2[0]["libre"] is False # Reservado por paciente
@@ -1087,7 +1087,7 @@ def test_agenda_and_citas():
     res_reprog = client.put(
         f"/api/proveedores/me/citas/{cita_paciente_id}",
         json={
-            "fecha": "2026-08-24",
+            "fecha": "2026-08-31",
             "hora_inicio": "09:00",
             "hora_fin": "10:00",
             "estado": "RESERVADA"

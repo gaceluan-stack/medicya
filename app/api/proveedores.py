@@ -906,6 +906,16 @@ def get_public_agenda_disponibilidad(
                 slot["libre"] = False
                 break
                 
+    # Deshabilitar turnos pasados si la fecha consultada es hoy en Ecuador (UTC-5)
+    from datetime import datetime, timezone, timedelta
+    now_ecuador = datetime.now(timezone.utc) - timedelta(hours=5)
+    today_ecuador_str = now_ecuador.strftime("%Y-%m-%d")
+    if fecha == today_ecuador_str:
+        now_time_str = now_ecuador.strftime("%H:%M")
+        for slot in slots:
+            if slot["hora_inicio"] < now_time_str:
+                slot["libre"] = False
+                
     return {
         "es_premium": True,
         "respuesta_automatica": resp_automatica,
@@ -936,6 +946,13 @@ def reservar_cita_public(
         
     if not proveedor.es_premium:
         raise HTTPException(status_code=400, detail="Este proveedor no acepta reservaciones automáticas.")
+        
+    # Evitar reservar turnos en el pasado (Ecuador UTC-5)
+    from datetime import datetime, timezone, timedelta
+    now_ecuador = datetime.now(timezone.utc) - timedelta(hours=5)
+    today_ecuador_str = now_ecuador.strftime("%Y-%m-%d")
+    if cita_in.fecha < today_ecuador_str or (cita_in.fecha == today_ecuador_str and cita_in.hora_inicio < now_ecuador.strftime("%H:%M")):
+        raise HTTPException(status_code=400, detail="No puedes reservar un turno en el pasado.")
         
     # Verificar solapamiento
     solapada = db.query(models.CitaProveedor).filter(
