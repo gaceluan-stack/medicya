@@ -510,7 +510,7 @@ async function contactProviderWithQuote(id, name, phone, quoteMessage, bookingSl
             showBookingSuccessModal(name, bookingSlots[0].date, bookingSlots, autoResponse, cleanPhone, quoteMessage);
         } else {
             alert(`¡Cotización registrada en Medic YA!\nTe redirigiremos a WhatsApp.`);
-            window.location.href = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(quoteMessage)}`;
+            window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(quoteMessage)}`, '_blank');
         }
         
     } catch(err) {
@@ -959,7 +959,7 @@ function showBookingSuccessModal(doctorName, dateVal, slotsList, autoResponse, c
     
     const waBtn = document.getElementById('success-whatsapp-btn');
     waBtn.onclick = function() {
-        window.location.href = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(quoteMessage)}`;
+        window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(quoteMessage)}`, '_blank');
     };
     
     document.getElementById('booking-success-modal').classList.remove('hidden');
