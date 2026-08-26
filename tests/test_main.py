@@ -1196,4 +1196,52 @@ def test_daily_report_cron():
     db.close()
 
 
+def test_cron_trigger_endpoints():
+    # 1. Test con token inválido
+    response = client.post("/api/proveedores/cron/send-today-report?token=wrong-token")
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Token de seguridad inválido"
+    
+    # 2. Test con token válido
+    db = TestingSessionLocal()
+    user_prov = models.UsuarioSistema(
+        email="cron_test_prov@medicya.com",
+        password_hash=deps.get_password_hash("docpassword"),
+        rol=models.RolUsuario.PROVEEDOR,
+        estado=models.EstadoUsuario.ACTIVO
+    )
+    db.add(user_prov)
+    db.flush()
+    
+    prov = models.ProveedorServicio(
+        usuario_id=user_prov.id,
+        ruc_cedula="1788776655111",
+        nombre_comercial="Dr. Cron Test",
+        categoria=models.CategoriaProveedor.DOCTORES,
+        latitud=-0.22,
+        longitud=-78.52,
+        precio_consulta=40.00,
+        membresia_fija=15.00,
+        es_premium=True,
+        celular_whatsapp="593999999999"
+    )
+    db.add(prov)
+    db.commit()
+    
+    try:
+        from app.config import settings
+        response_today = client.post(f"/api/proveedores/cron/send-today-report?token={settings.CRON_SECRET_TOKEN}")
+        assert response_today.status_code == 200
+        assert response_today.json()["status"] == "processing"
+        
+        response_tomorrow = client.post(f"/api/proveedores/cron/send-tomorrow-report?token={settings.CRON_SECRET_TOKEN}")
+        assert response_tomorrow.status_code == 200
+        assert response_tomorrow.json()["status"] == "processing"
+    finally:
+        db.delete(prov)
+        db.delete(user_prov)
+        db.commit()
+        db.close()
+
+
 

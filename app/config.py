@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = os.getenv("SECRET_KEY", "super-secret-key-medic-ya-2026")
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 días para sesión del paciente
+    CRON_SECRET_TOKEN: str = os.getenv("CRON_SECRET_TOKEN", "medic-ya-cron-token-2026")
     
     # Base de Datos: Target PostgreSQL. Fallback a SQLite para pruebas locales fáciles.
     DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./medic_ya.db")

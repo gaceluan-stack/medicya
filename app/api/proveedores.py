@@ -3,7 +3,7 @@ import math
 from datetime import datetime
 from decimal import Decimal
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, status
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, status, Query
 from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.db import models
@@ -12,6 +12,7 @@ from app.schemas import billing as billing_schemas
 from app.api import deps
 from app.services.whatsapp import send_whatsapp_notification
 from app.services.email import send_email_notification
+from app.config import settings
 
 router = APIRouter(prefix="/proveedores", tags=["Proveedores"])
 
@@ -120,7 +121,7 @@ async def contactar_proveedor(
     # 2. Programar notificaciones en segundo plano
     background_tasks.add_task(
         send_whatsapp_notification,
-        provider_phone=paciente.celular_whatsapp,
+        provider_phone=proveedor.celular_whatsapp,
         patient_name=paciente.nombres,
         patient_lastname=paciente.apellidos,
         patient_cedula=paciente.cedula
@@ -1022,4 +1023,47 @@ def update_cita(
         print(f"   Evento Actualizado: Cita con {cita.paciente_nombre} ({cita.fecha} de {cita.hora_inicio} a {cita.hora_fin})")
 
     return cita
+
+
+@router.post("/cron/send-today-report")
+async def trigger_today_report(
+    token: str = Query(...),
+    background_tasks: BackgroundTasks = None,
+    db: Session = Depends(get_db)
+):
+    """
+    Endpoint seguro para disparar el reporte de atenciones de hoy de forma externa.
+    """
+    if token != settings.CRON_SECRET_TOKEN:
+        raise HTTPException(status_code=403, detail="Token de seguridad inválido")
+        
+    from app.services.report_cron import send_all_doctors_today_reports
+    if background_tasks:
+        background_tasks.add_task(send_all_doctors_today_reports, db)
+        return {"status": "processing", "message": "Enviando reportes de hoy en segundo plano"}
+    else:
+        await send_all_doctors_today_reports(db)
+        return {"status": "success", "message": "Reportes de hoy enviados con éxito"}
+
+
+@router.post("/cron/send-tomorrow-report")
+async def trigger_tomorrow_report(
+    token: str = Query(...),
+    background_tasks: BackgroundTasks = None,
+    db: Session = Depends(get_db)
+):
+    """
+    Endpoint seguro para disparar el reporte de agenda de mañana de forma externa.
+    """
+    if token != settings.CRON_SECRET_TOKEN:
+        raise HTTPException(status_code=403, detail="Token de seguridad inválido")
+        
+    from app.services.report_cron import send_all_doctors_tomorrow_reports
+    if background_tasks:
+        background_tasks.add_task(send_all_doctors_tomorrow_reports, db)
+        return {"status": "processing", "message": "Enviando reportes de mañana en segundo plano"}
+    else:
+        await send_all_doctors_tomorrow_reports(db)
+        return {"status": "success", "message": "Reportes de mañana enviados con éxito"}
+
 
