@@ -940,29 +940,40 @@ function toggleMobileView() {
 }
 
 function showBookingSuccessModal(doctorName, dateVal, slotsList, autoResponse, cleanPhone, quoteMessage) {
-    document.getElementById('success-doctor-name').textContent = doctorName;
-    document.getElementById('success-booking-date').textContent = dateVal;
-    
-    // Sort slots by start time
-    slotsList.sort((a, b) => a.start.localeCompare(b.start));
-    const timesText = slotsList.map(s => `${s.start} a ${s.end}`).join(', ');
-    document.getElementById('success-booking-time').textContent = timesText;
-    
+    const docNameEl = document.getElementById('success-doctor-name');
+    const dateValEl = document.getElementById('success-booking-date');
+    const bookingTimeEl = document.getElementById('success-booking-time');
     const autoresponseBox = document.getElementById('success-autoresponse-box');
     const autoresponseText = document.getElementById('success-autoresponse-text');
-    if (autoResponse) {
-        autoresponseText.textContent = autoResponse;
-        autoresponseBox.classList.remove('hidden');
-    } else {
-        autoresponseBox.classList.add('hidden');
-    }
-    
     const waBtn = document.getElementById('success-whatsapp-btn');
-    waBtn.onclick = function() {
+    const successModal = document.getElementById('booking-success-modal');
+
+    if (docNameEl && dateValEl && bookingTimeEl && autoresponseBox && autoresponseText && waBtn && successModal) {
+        docNameEl.textContent = doctorName;
+        dateValEl.textContent = dateVal;
+        
+        // Sort slots by start time
+        slotsList.sort((a, b) => a.start.localeCompare(b.start));
+        const timesText = slotsList.map(s => `${s.start} a ${s.end}`).join(', ');
+        bookingTimeEl.textContent = timesText;
+        
+        if (autoResponse) {
+            autoresponseText.textContent = autoResponse;
+            autoresponseBox.classList.remove('hidden');
+        } else {
+            autoresponseBox.classList.add('hidden');
+        }
+        
+        waBtn.onclick = function() {
+            window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(quoteMessage)}`, '_blank');
+        };
+        
+        successModal.classList.remove('hidden');
+    } else {
+        // Fallback si el modal no se encuentra en el DOM (caché del Service Worker)
+        alert(`¡Cita apartada con éxito!\nTe redirigiremos a WhatsApp.`);
         window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(quoteMessage)}`, '_blank');
-    };
-    
-    document.getElementById('booking-success-modal').classList.remove('hidden');
+    }
 }
 
 function closeBookingSuccessModal() {
