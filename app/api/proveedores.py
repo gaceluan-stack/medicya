@@ -1067,3 +1067,17 @@ async def trigger_tomorrow_report(
         return {"status": "success", "message": "Reportes de mañana enviados con éxito"}
 
 
+@router.get("/debug/citas")
+def debug_citas(db: Session = Depends(get_db)):
+    citas = db.query(models.CitaProveedor).all()
+    return [{
+        "id": c.id,
+        "proveedor_id": c.proveedor_id,
+        "paciente_nombre": c.paciente_nombre,
+        "fecha": str(c.fecha),
+        "hora_inicio": c.hora_inicio,
+        "hora_fin": c.hora_fin,
+        "estado": c.estado
+    } for c in citas]
+
+
