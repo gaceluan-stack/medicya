@@ -1068,7 +1068,33 @@ async def trigger_tomorrow_report(
 
 
 @router.get("/debug/citas")
-def debug_citas(db: Session = Depends(get_db)):
+def debug_citas(
+    fecha: Optional[str] = None,
+    hora_inicio: Optional[str] = None,
+    hora_fin: Optional[str] = None,
+    proveedor_id: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    if fecha and hora_inicio and hora_fin and proveedor_id:
+        import datetime as dt_mod
+        dt_val = dt_mod.datetime.strptime(fecha, "%Y-%m-%d").date()
+        solapada = db.query(models.CitaProveedor).filter(
+            models.CitaProveedor.proveedor_id == proveedor_id,
+            models.CitaProveedor.fecha == dt_val,
+            models.CitaProveedor.hora_inicio < hora_fin,
+            models.CitaProveedor.hora_fin > hora_inicio
+        ).all()
+        return [{
+            "id": c.id,
+            "proveedor_id": c.proveedor_id,
+            "paciente_nombre": c.paciente_nombre,
+            "fecha": str(c.fecha),
+            "hora_inicio": c.hora_inicio,
+            "hora_fin": c.hora_fin,
+            "estado": c.estado,
+            "servicios": c.servicios
+        } for c in solapada]
+
     citas = db.query(models.CitaProveedor).all()
     return [{
         "id": c.id,
