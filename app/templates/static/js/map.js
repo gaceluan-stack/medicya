@@ -181,40 +181,28 @@ function getProviderIcon(category, esPremium) {
     let pointerColor = "";
     
     if (category === 'Doctores') {
-        pinClass = esPremium 
-            ? "bg-sky-500 text-white border-yellow-400 border-[3px] shadow-[0_0_12px_rgba(245,158,11,0.8)] scale-110" 
-            : "bg-sky-500 text-white border-white border-2 shadow-md";
+        pinClass = "bg-sky-500 text-white border-white border-2 shadow-md";
         iconHtml = '<i class="fa-solid fa-user-doctor text-base"></i>';
-        pointerColor = esPremium ? "border-t-yellow-400" : "border-t-sky-500";
+        pointerColor = "border-t-sky-500";
     } else if (category === 'Spas y Estética') {
-        pinClass = esPremium 
-            ? "bg-pink-500 text-white border-yellow-400 border-[3px] shadow-[0_0_12px_rgba(245,158,11,0.8)] scale-110" 
-            : "bg-pink-500 text-white border-white border-2 shadow-md";
+        pinClass = "bg-pink-500 text-white border-white border-2 shadow-md";
         iconHtml = '<i class="fa-solid fa-spa text-base"></i>';
-        pointerColor = esPremium ? "border-t-yellow-400" : "border-t-pink-500";
+        pointerColor = "border-t-pink-500";
     } else if (category === 'Clínicas') {
-        pinClass = esPremium 
-            ? "bg-emerald-500 text-white border-yellow-400 border-[3px] shadow-[0_0_12px_rgba(245,158,11,0.8)] scale-110" 
-            : "bg-emerald-500 text-white border-white border-2 shadow-md";
+        pinClass = "bg-emerald-500 text-white border-white border-2 shadow-md";
         iconHtml = '<i class="fa-solid fa-hospital text-base"></i>';
-        pointerColor = esPremium ? "border-t-yellow-400" : "border-t-emerald-500";
+        pointerColor = "border-t-emerald-500";
     } else if (category === 'Farmacias') {
-        pinClass = esPremium 
-            ? "bg-purple-500 text-white border-yellow-400 border-[3px] shadow-[0_0_12px_rgba(245,158,11,0.8)] scale-110" 
-            : "bg-purple-500 text-white border-white border-2 shadow-md";
+        pinClass = "bg-purple-500 text-white border-white border-2 shadow-md";
         iconHtml = '<i class="fa-solid fa-prescription-bottle-medical text-base"></i>';
-        pointerColor = esPremium ? "border-t-yellow-400" : "border-t-purple-500";
+        pointerColor = "border-t-purple-500";
     } else {
-        pinClass = esPremium 
-            ? "bg-amber-500 text-white border-yellow-400 border-[3px] shadow-[0_0_12px_rgba(245,158,11,0.8)] scale-110" 
-            : "bg-amber-500 text-white border-white border-2 shadow-md";
+        pinClass = "bg-amber-500 text-white border-white border-2 shadow-md";
         iconHtml = '<i class="fa-solid fa-flask-vial text-base"></i>';
-        pointerColor = esPremium ? "border-t-yellow-400" : "border-t-amber-500";
+        pointerColor = "border-t-amber-500";
     }
     
-    let crownHtml = esPremium 
-        ? '<div class="absolute -top-4.5 left-1/2 transform -translate-x-1/2 text-amber-500 text-[11px] filter drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.4)] animate-bounce" style="animation-duration: 2.5s;"><i class="fa-solid fa-crown"></i></div>' 
-        : '';
+    let crownHtml = '';
         
     return L.divIcon({
         className: 'custom-leaflet-marker',
@@ -348,7 +336,7 @@ function applyAdvancedFilters() {
         });
         
         const docImgPopup = getProviderDefaultImage(prov);
-        const badgeHtml = prov.es_premium ? `<span class="bg-teal-50 text-teal-700 border border-teal-200 px-2 py-0.5 rounded-lg font-bold text-[9px]">Membresía Premium</span>` : `<span class="bg-gray-50 text-gray-500 border border-gray-200 px-2 py-0.5 rounded-lg font-semibold text-[9px]">Membresía Básica</span>`;
+        const badgeHtml = "";
         
         const isLoggedIn = !!localStorage.getItem('token');
         const blurClass = isLoggedIn ? "" : "auth-blur";
@@ -441,7 +429,7 @@ function applyAdvancedFilters() {
                     <img src="${docImg}" alt="${prov.nombre_comercial}" class="w-14 h-14 rounded-full object-cover border-2 border-brand-50 shadow-sm flex-shrink-0">
                     <div class="flex-1 min-w-0">
                         <h4 class="font-bold text-gray-900 text-sm truncate flex items-center ${blurClass}">
-                            ${prov.nombre_comercial} ${prov.es_premium ? '<span class="ml-1 text-amber-500">👑</span>' : ''}
+                            ${prov.nombre_comercial}
                         </h4>
                         <p class="text-brand-600 font-semibold text-[11px] mt-0.5 ${blurClass}">${prov.especialidad || 'Especialista'}</p>
                         <p class="text-gray-450 text-[10px] mt-1 flex items-center ${blurClass}"><i class="fa-solid fa-location-dot text-brand-500 mr-1.5 flex-shrink-0 w-3.5 text-center"></i> ${[prov.ciudad, prov.sector].filter(Boolean).join(', ') || 'Ubicación no especificada'}</p>
@@ -503,6 +491,11 @@ async function contactProviderWithQuote(id, name, phone, quoteMessage, bookingSl
         
         if (!response.ok) throw new Error(data.detail || "Error al contactar");
         
+        if (data.status === "unpaid") {
+            alert(`El doctor ${data.nombre_comercial || name} no tiene activa su cuenta de Medic YA en este momento.\nLe hemos notificado tu interés de contacto al profesional.\n\nSi deseas que te atienda, puedes sugerirle que nos contacte al 0993093091 para activar su perfil.`);
+            return;
+        }
+        
         const cleanPhone = formatEcuadorWhatsApp(phone);
         
         // Redirigir directamente a WhatsApp sin modal intermedio para evitar bloqueos y confusiones
@@ -563,7 +556,7 @@ function selectProviderForRouting(id) {
     document.getElementById('sidebar-main-content').classList.add('hidden');
     document.getElementById('sidebar-detail-content').classList.remove('hidden');
     
-    const premiumBadge = prov.es_premium ? "<span class='ml-1.5 text-amber-500 font-bold'>👑 Premium</span>" : "";
+    const premiumBadge = "";
     
     // Generar listado de servicios con checkboxes
     let services = [];
@@ -653,7 +646,7 @@ function selectProviderForRouting(id) {
             ${prov.es_premium ? `
             <div class="space-y-3 pt-3 border-t border-gray-100 font-sans">
                 <h4 class="text-[11px] font-bold text-gray-900 uppercase tracking-wider flex items-center">
-                    <i class="fa-solid fa-calendar-check text-brand-500 mr-2"></i> Reservar Cita (Premium)
+                    <i class="fa-solid fa-calendar-check text-brand-500 mr-2"></i> Reservar Cita
                 </h4>
                 
                 <div class="space-y-2">

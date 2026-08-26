@@ -26,19 +26,28 @@ def run_monthly_billing(db: Session):
     
     facturas_creadas = 0
     for prov in proveedores:
-        # Contar clics del proveedor en los últimos 30 días
-        clics_count = db.query(models.EventoClicBilling).filter(
-            models.EventoClicBilling.proveedor_id == prov.id,
-            models.EventoClicBilling.created_at >= fecha_limite_clics
+        # Contar citas del proveedor en los últimos 30 días
+        citas_count = db.query(models.CitaProveedor).filter(
+            models.CitaProveedor.proveedor_id == prov.id,
+            models.CitaProveedor.created_at >= fecha_limite_clics
         ).count()
         
-        # Calcular $5 USD por cada 1000 clics
-        bloques_de_mil = math.floor(clics_count / 1000)
-        monto_clics = Decimal(bloques_de_mil) * Decimal("5.00")
+        # Calcular cargo variable según el volumen de citas agendadas por WhatsApp:
+        # - Primeras citas agendadas hasta cumplir 20: $25 USD
+        # - De 21 a 40 citas: $50 USD
+        # - De 41 o más citas: $75 USD
+        monto_variable = Decimal("0.00")
+        if citas_count > 0:
+            if citas_count <= 20:
+                monto_variable = Decimal("25.00")
+            elif citas_count <= 40:
+                monto_variable = Decimal("50.00")
+            else:
+                monto_variable = Decimal("75.00")
         
-        # Ajustar membresía fija: Premium $15, Básico $10
-        monto_fijo = Decimal("15.00") if prov.es_premium else prov.membresia_fija
-        monto_total = monto_fijo + monto_clics
+        # Suscripción mensual base única de $5.00 USD para todos los proveedores
+        monto_fijo = Decimal("5.00")
+        monto_total = monto_fijo + monto_variable
         
         # Crear factura
         nueva_factura = models.Factura(
@@ -46,7 +55,7 @@ def run_monthly_billing(db: Session):
             fecha_emision=datetime.utcnow().date(),
             fecha_vencimiento=fecha_vencimiento,
             monto_fijo=monto_fijo,
-            monto_clics=monto_clics,
+            monto_clics=monto_variable, # Reutilizamos la columna monto_clics para almacenar la tarifa por citas sin requerir migraciones
             monto_total=monto_total,
             estado=models.EstadoFactura.PENDIENTE
         )
@@ -74,8 +83,8 @@ def run_monthly_billing(db: Session):
             f"<p>Estimado/a <strong>{prov.nombre_comercial}</strong>,</p>"
             f"<p>Se ha generado tu factura mensual para el periodo actual:</p>"
             f"<ul>"
-            f"  <li><strong>Membresía Fija:</strong> ${monto_fijo:.2f} USD</li>"
-            f"  <li><strong>Clics Recibidos (Últimos 30 días):</strong> {clics_count} clics (${monto_clics:.2f} USD adicionales)</li>"
+            f"  <li><strong>Suscripción Fija Mensual:</strong> ${monto_fijo:.2f} USD</li>"
+            f"  <li><strong>Citas Agendadas (Últimos 30 días):</strong> {citas_count} citas (${monto_variable:.2f} USD de tarifa variable)</li>"
             f"  <li><strong>Monto Total a Pagar:</strong> ${monto_total:.2f} USD</li>"
             f"  <li><strong>Fecha de Vencimiento:</strong> {fecha_vencimiento} (Plazo de 10 días para pago)</li>"
             f"</ul>"

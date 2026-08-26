@@ -118,7 +118,25 @@ async def contactar_proveedor(
     db.add(nuevo_clic)
     db.commit()
     
-    # 2. Programar notificaciones en segundo plano
+    # Si el proveedor no ha pagado la cuota de $5 (es_premium es falso en el nuevo esquema)
+    if not proveedor.es_premium:
+        from app.services.whatsapp import send_custom_whatsapp
+        msg_blocked = (
+            f"Hola, se está tratando de contactar {paciente.nombres} {paciente.apellidos} de la app MedicYA. "
+            f"Si quiere saber el contacto y no perder oportunidades como esta contáctenos al 0993093091 para confirmar el pago de la aplicación."
+        )
+        background_tasks.add_task(
+            send_custom_whatsapp,
+            to_phone=proveedor.celular_whatsapp,
+            message=msg_blocked
+        )
+        return {
+            "status": "unpaid",
+            "nombre_comercial": proveedor.nombre_comercial,
+            "message": "Contacto registrado en modo impago"
+        }
+    
+    # 2. Programar notificaciones en segundo plano para doctores activos
     background_tasks.add_task(
         send_whatsapp_notification,
         provider_phone=proveedor.celular_whatsapp,
@@ -147,7 +165,10 @@ async def contactar_proveedor(
         body=email_body
     )
     
-    return {"message": "Contacto registrado exitosamente y notificaciones enviadas"}
+    return {
+        "status": "success",
+        "message": "Contacto registrado exitosamente y notificaciones enviadas"
+    }
 
 @router.get("/dashboard/metricas", response_model=billing_schemas.MetricasProveedor)
 def get_dashboard_metricas(
@@ -531,9 +552,9 @@ def upgrade_provider_to_premium(
     if not proveedor:
         raise HTTPException(status_code=404, detail="Proveedor no encontrado")
     proveedor.es_premium = True
-    proveedor.membresia_fija = Decimal("15.00")
+    proveedor.membresia_fija = Decimal("5.00")
     db.commit()
-    return {"message": "Suscripción Premium activada exitosamente", "membresia_fija": 15.00}
+    return {"message": "Suscripción mensual de $5 USD activada exitosamente", "membresia_fija": 5.00}
 
 @router.post("/solicitar-publicidad", status_code=status.HTTP_201_CREATED)
 def solicitar_publicidad_proveedor(

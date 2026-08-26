@@ -161,7 +161,21 @@ def test_admin_crea_proveedor_y_contacto_paciente():
     response_pac = client.post("/api/auth/register-paciente", json=paciente_payload)
     pac_token = response_pac.json()["access_token"]
 
-    # 5. Paciente hace click en "Contactar"
+    # 5. Activar membresía (upgrade simulado) del doctor para habilitar el contacto
+    login_doctor_init = {
+        "username": "doctor@medicya.com",
+        "password": "doctorpassword"
+    }
+    response_doc_login_init = client.post("/api/auth/login", data=login_doctor_init)
+    doc_token_init = response_doc_login_init.json()["access_token"]
+    
+    response_upgrade = client.post(
+        "/api/proveedores/upgrade-simulado",
+        headers={"Authorization": f"Bearer {doc_token_init}"}
+    )
+    assert response_upgrade.status_code == 200
+
+    # 6. Paciente hace click en "Contactar"
     response_contact = client.post(
         f"/api/proveedores/{prov_id}/contactar",
         headers={"Authorization": f"Bearer {pac_token}"}
@@ -169,13 +183,8 @@ def test_admin_crea_proveedor_y_contacto_paciente():
     assert response_contact.status_code == 201
     assert "Contacto registrado exitosamente" in response_contact.json()["message"]
 
-    # 6. Login del Doctor para ver su panel de métricas
-    login_doctor = {
-        "username": "doctor@medicya.com",
-        "password": "doctorpassword"
-    }
-    response_doc_login = client.post("/api/auth/login", data=login_doctor)
-    doc_token = response_doc_login.json()["access_token"]
+    # 7. Login del Doctor para ver su panel de métricas
+    doc_token = doc_token_init
     
     # Obtener métricas
     response_metrics = client.get(
@@ -214,21 +223,50 @@ def test_cron_jobs_facturacion_y_bloqueo_por_mora():
     db.add(prov)
     db.flush()
     
-    # 2. Agregar 1500 clics de prueba
-    for i in range(1500):
-        clic = models.EventoClicBilling(proveedor_id=prov.id, paciente_id=None)
-        db.add(clic)
+    # 2. Agregar Paciente y Citas de prueba
+    user_paciente = models.UsuarioSistema(
+        email="paciente_test@medicya.com",
+        password_hash=deps.get_password_hash("pacientepassword"),
+        rol=models.RolUsuario.PACIENTE,
+        estado=models.EstadoUsuario.ACTIVO
+    )
+    db.add(user_paciente)
+    db.flush()
+    
+    paciente = models.Paciente(
+        usuario_id=user_paciente.id,
+        cedula="1711223344",
+        nombres="Juan",
+        apellidos="Pérez",
+        celular_whatsapp="+593999999999",
+        origen_informacion=models.CanalAtribucion.TIKTOK
+    )
+    db.add(paciente)
+    db.flush()
+
+    for i in range(5):
+        cita = models.CitaProveedor(
+            proveedor_id=prov.id,
+            paciente_id=paciente.id,
+            paciente_nombre="Juan Pérez",
+            fecha="2026-08-31",
+            hora_inicio=f"08:{i*10}",
+            hora_fin=f"08:{(i+1)*10}",
+            estado="RESERVADA",
+            servicios="Consulta Médica General"
+        )
+        db.add(cita)
     db.commit()
     
     # 3. Ejecutar cron de facturación mensual
     billing_cron.run_monthly_billing(db)
     
-    # Comprobar factura generada: Membresía Fija ($10) + Clics (1500 clics -> 1 bloque de 1000 = $5 adicionales) = $15.00
+    # Comprobar factura generada: Suscripción Fija ($5.00) + Tramo variable 1-20 citas ($25.00) = $30.00
     factura = db.query(models.Factura).filter(models.Factura.proveedor_id == prov.id).first()
     assert factura is not None
-    assert float(factura.monto_fijo) == 10.00
-    assert float(factura.monto_clics) == 5.00
-    assert float(factura.monto_total) == 15.00
+    assert float(factura.monto_fijo) == 5.00
+    assert float(factura.monto_clics) == 25.00
+    assert float(factura.monto_total) == 30.00
     assert factura.estado == models.EstadoFactura.PENDIENTE
     
     # El proveedor debe haber pasado a PENDIENTE_PAGO
@@ -573,7 +611,7 @@ def test_payphone_payment_simulation():
     
     factura = db.query(models.Factura).filter(models.Factura.proveedor_id == prov.id).first()
     assert factura is not None
-    assert float(factura.monto_total) == 15.00 # $15 premium fija
+    assert float(factura.monto_total) == 5.00 # $5 de membresía fija
     
     # 2. Login de doctor y pagar factura vía PayPhone
     login_doc = client.post("/api/auth/login", data={"username": "doctor_pay@medicya.com", "password": "doctorpassword"})
@@ -1120,7 +1158,7 @@ def test_daily_report_cron():
         latitud=-0.22,
         longitud=-78.52,
         precio_consulta=40.00,
-        membresia_fija=15.00,
+        membresia_fija=5.00,
         es_premium=True,
         celular_whatsapp="593999999999"
     )
@@ -1221,7 +1259,7 @@ def test_cron_trigger_endpoints():
         latitud=-0.22,
         longitud=-78.52,
         precio_consulta=40.00,
-        membresia_fija=15.00,
+        membresia_fija=5.00,
         es_premium=True,
         celular_whatsapp="593999999999"
     )
