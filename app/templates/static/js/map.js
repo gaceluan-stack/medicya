@@ -505,13 +505,9 @@ async function contactProviderWithQuote(id, name, phone, quoteMessage, bookingSl
         
         const cleanPhone = formatEcuadorWhatsApp(phone);
         
-        if (bookingSlots && bookingSlots.length > 0) {
-            // Mostrar modal de éxito detallado con la auto-respuesta del doctor y los turnos
-            showBookingSuccessModal(name, bookingSlots[0].date, bookingSlots, autoResponse, cleanPhone, quoteMessage);
-        } else {
-            alert(`¡Cotización registrada en Medic YA!\nTe redirigiremos a WhatsApp.`);
-            window.location.href = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(quoteMessage)}`;
-        }
+        // Redirigir directamente a WhatsApp sin modal intermedio para evitar bloqueos y confusiones
+        alert(`¡Cita y cotización registradas con éxito!\nTe redirigiremos a WhatsApp.`);
+        window.location.href = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(quoteMessage)}`;
         
     } catch(err) {
         alert(err.message);
