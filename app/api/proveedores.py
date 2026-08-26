@@ -927,6 +927,7 @@ def get_public_agenda_disponibilidad(
 def reservar_cita_public(
     id: str,
     cita_in: proveedor_schemas.CitaCreate,
+    background_tasks: BackgroundTasks,
     current_user: models.UsuarioSistema = Depends(deps.get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -985,6 +986,18 @@ def reservar_cita_public(
     if proveedor.google_calendar_link:
         print(f"📅 [Google Calendar Sync] Creando evento en Google Calendar del Dr. {proveedor.nombre_comercial}")
         print(f"   Evento: Cita con {nueva_cita.paciente_nombre} ({nueva_cita.fecha} de {nueva_cita.hora_inicio} a {nueva_cita.hora_fin})")
+
+    # Enviar respuesta automática del profesional al celular de WhatsApp del paciente
+    config = db.query(models.ConfiguracionAgendaProveedor).filter(
+        models.ConfiguracionAgendaProveedor.proveedor_id == proveedor.id
+    ).first()
+    if config and config.respuesta_automatica and paciente.celular_whatsapp:
+        from app.services.whatsapp import send_custom_whatsapp
+        background_tasks.add_task(
+            send_custom_whatsapp,
+            to_phone=paciente.celular_whatsapp,
+            message=config.respuesta_automatica
+        )
 
     return nueva_cita
 

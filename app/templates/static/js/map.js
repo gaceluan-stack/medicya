@@ -795,11 +795,6 @@ async function triggerWhatsAppQuote(providerId) {
     // Formatear el mensaje
     let message = "";
     
-    // Respuesta automática
-    if (prov.es_premium && doctorAutoResponse) {
-        message += `_*Respuesta Automática del Profesional: "${doctorAutoResponse}"*_\n\n`;
-    }
-    
     // Turno reservado
     if (prov.es_premium && selectedBookingSlots && selectedBookingSlots.length > 0) {
         // Ordenamos los slots por hora de inicio
