@@ -945,7 +945,10 @@ def reservar_cita_public(
         models.CitaProveedor.hora_fin > cita_in.hora_inicio
     ).first()
     if solapada:
-        raise HTTPException(status_code=400, detail="El horario seleccionado ya no está disponible.")
+        raise HTTPException(
+            status_code=400,
+            detail=f"El horario {cita_in.hora_inicio} a {cita_in.hora_fin} para el día {cita_in.fecha} ya no está disponible."
+        )
         
     nueva_cita = models.CitaProveedor(
         proveedor_id=proveedor.id,
@@ -1103,5 +1106,16 @@ def debug_citas(
         "hora_fin": c.hora_fin,
         "estado": c.estado
     } for c in citas]
+
+
+@router.get("/debug/doctors")
+def debug_doctors(db: Session = Depends(get_db)):
+    doctors = db.query(models.ProveedorServicio).all()
+    return [{
+        "id": d.id,
+        "nombre_comercial": d.nombre_comercial,
+        "es_premium": d.es_premium,
+        "celular_whatsapp": d.celular_whatsapp
+    } for d in doctors]
 
 
