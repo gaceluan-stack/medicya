@@ -69,7 +69,7 @@ def get_proveedores_mapa(
     return result
 
 @router.post("/{id}/contactar", status_code=status.HTTP_201_CREATED)
-async def contactar_proveedor(
+def contactar_proveedor(
     id: str,
     background_tasks: BackgroundTasks,
     current_user: models.UsuarioSistema = Depends(deps.get_current_user),

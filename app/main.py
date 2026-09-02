@@ -110,6 +110,11 @@ app = FastAPI(
     version="1.0.0"
 )
 
+from fastapi.middleware.gzip import GZipMiddleware
+
+# Configurar middleware de compresión GZip para reducir latencia y consumo de ancho de banda
+app.add_middleware(GZipMiddleware, minimum_size=500)
+
 # Configurar middleware CORS
 app.add_middleware(
     CORSMiddleware,

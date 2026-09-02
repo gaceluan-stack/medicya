@@ -12,7 +12,8 @@ from sqlalchemy import (
     Integer,
     ForeignKey,
     Enum as SQLEnum,
-    JSON
+    JSON,
+    Index
 )
 from sqlalchemy.orm import relationship, backref
 from app.db.database import Base
@@ -263,6 +264,7 @@ class ConfiguracionAgendaProveedor(Base):
 
 class CitaProveedor(Base):
     __tablename__ = "citas_proveedores"
+    __table_args__ = (Index("idx_citas_prov_fecha", "proveedor_id", "fecha"),)
     
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     proveedor_id = Column(String(36), ForeignKey("proveedores_servicio.id", ondelete="CASCADE"), nullable=False, index=True)
