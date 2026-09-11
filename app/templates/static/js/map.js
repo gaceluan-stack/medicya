@@ -893,7 +893,7 @@ function goBackToList() {
 
 function toggleMobileView() {
     const aside = document.querySelector('aside');
-    const mapSec = document.getElementById('map');
+    const mapSec = document.getElementById('map-wrapper') || document.getElementById('map');
     const btn = document.getElementById('mobile-toggle-btn');
     
     if (activeMobileView === 'list') {

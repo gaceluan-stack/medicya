@@ -236,10 +236,12 @@
             </div>
         </aside>
 
-        <!-- Map Section -->
-        <section id="map" class="flex-1 h-full z-0 hidden md:block relative">
-            <!-- Botón Mi Ubicación (Google Maps style) -->
-            <button id="recenter-location-btn" onclick="recenterMapOnUser()" title="Centrar en mi ubicación" class="absolute bottom-6 right-6 z-[400] bg-white hover:bg-teal-50 text-brand-600 hover:text-brand-700 border border-gray-200/80 w-12 h-12 rounded-full shadow-2xl flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 group focus:outline-none" aria-label="Centrar mapa en mi ubicación">
+        <!-- Map Container Section con Botón Fijo (Google Maps Style) -->
+        <section id="map-wrapper" class="flex-1 h-full relative overflow-hidden hidden md:block">
+            <div id="map" class="w-full h-full z-0"></div>
+            
+            <!-- Botón Fijo Mi Ubicación -->
+            <button id="recenter-location-btn" onclick="recenterMapOnUser()" title="Centrar en mi ubicación" class="absolute bottom-6 right-6 z-[9999] bg-white hover:bg-teal-50 text-brand-600 hover:text-brand-700 border border-gray-200/90 w-12 h-12 rounded-full shadow-2xl flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 group focus:outline-none cursor-pointer" aria-label="Centrar mapa en mi ubicación">
                 <i class="fa-solid fa-crosshairs text-xl group-hover:rotate-90 transition-transform duration-300"></i>
             </button>
         </section>
@@ -670,7 +672,7 @@
     </div>
 
     <!-- Frontend JS logic -->
-    <script src="/static/js/map.js?v=1.1.20"></script>
+    <script src="/static/js/map.js?v=1.1.21"></script>
     <script src="/static/js/main.js?v=1.1.4"></script>
 
     <!-- PWA Install & Service Worker Logic -->
