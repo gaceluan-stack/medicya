@@ -4,24 +4,6 @@ from app.config import settings
 
 logger = logging.getLogger("whatsapp_service")
 
-async def send_whatsapp_notification(
-    provider_phone: str,
-    patient_name: str,
-    patient_lastname: str,
-    patient_cedula: str
-) -> bool:
-    """
-    Envía una notificación de WhatsApp al profesional indicando que un cliente
-    ha solicitado contacto con su información personal (Nombre, Apellido, Cédula).
-    """
-    message = (
-        f"📢 *Medic YA - Nuevo Prospecto*\n\n"
-        f"Hola, un paciente está interesado en tus servicios:\n"
-        f"👤 *Nombre:* {patient_name} {patient_lastname}\n"
-        f"🆔 *Documento:* {patient_cedula}\n\n"
-        f"Por favor, revisa tu panel de Medic YA para más detalles."
-    )
-    
 def build_whatsapp_payload(url: str, to_phone: str, message: str, token: str) -> dict:
     clean_phone = to_phone.replace("+", "").replace(" ", "").replace("-", "")
     url_lower = url.lower()
