@@ -497,9 +497,15 @@ async function contactProviderWithQuote(id, name, phone, quoteMessage, bookingSl
         }
         
         const cleanPhone = formatEcuadorWhatsApp(phone);
+        const autoMsg = data.respuesta_automatica || autoResponse || "";
         
-        // Redirigir directamente a WhatsApp sin modal intermedio para evitar bloqueos y confusiones
-        alert(`¡Cita y cotización registradas con éxito!\nTe redirigiremos a WhatsApp.`);
+        let confirmText = `¡Cita y cotización registradas con éxito!\n`;
+        if (autoMsg) {
+            confirmText += `\n💬 Respuesta Automática del Profesional:\n"${autoMsg}"\n`;
+        }
+        confirmText += `\nTe redirigiremos a WhatsApp para enviar el mensaje al doctor.`;
+        
+        alert(confirmText);
         window.location.href = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(quoteMessage)}`;
         
     } catch(err) {

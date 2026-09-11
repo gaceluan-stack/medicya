@@ -165,9 +165,31 @@ def contactar_proveedor(
         body=email_body
     )
     
+    # 3. Enviar respuesta automática del profesional al celular de WhatsApp del paciente
+    config = db.query(models.ConfiguracionAgendaProveedor).filter(
+        models.ConfiguracionAgendaProveedor.proveedor_id == proveedor.id
+    ).first()
+    
+    auto_message = ""
+    if config and config.respuesta_automatica and config.respuesta_automatica.strip():
+        auto_message = config.respuesta_automatica.strip()
+    else:
+        auto_message = f"¡Hola {paciente.nombres}! Gracias por contactar a {proveedor.nombre_comercial} a través de Medic YA. He recibido tu solicitud y me pondré en contacto contigo a la brevedad posible."
+
+    if paciente.celular_whatsapp:
+        from app.services.phone_formatter import format_ecuador_whatsapp
+        from app.services.whatsapp import send_custom_whatsapp
+        formatted_patient_phone = format_ecuador_whatsapp(paciente.celular_whatsapp)
+        background_tasks.add_task(
+            send_custom_whatsapp,
+            to_phone=formatted_patient_phone,
+            message=auto_message
+        )
+    
     return {
         "status": "success",
-        "message": "Contacto registrado exitosamente y notificaciones enviadas"
+        "message": "Contacto registrado exitosamente y notificaciones enviadas",
+        "respuesta_automatica": auto_message
     }
 
 @router.get("/dashboard/metricas", response_model=billing_schemas.MetricasProveedor)
@@ -1012,12 +1034,21 @@ def reservar_cita_public(
     config = db.query(models.ConfiguracionAgendaProveedor).filter(
         models.ConfiguracionAgendaProveedor.proveedor_id == proveedor.id
     ).first()
-    if config and config.respuesta_automatica and paciente.celular_whatsapp:
+    
+    auto_message = ""
+    if config and config.respuesta_automatica and config.respuesta_automatica.strip():
+        auto_message = config.respuesta_automatica.strip()
+    else:
+        auto_message = f"¡Hola {paciente.nombres}! Tu reserva en {proveedor.nombre_comercial} para el día {cita_in.fecha} ({cita_in.hora_inicio} a {cita_in.hora_fin}) ha sido registrada con éxito."
+
+    if paciente.celular_whatsapp:
+        from app.services.phone_formatter import format_ecuador_whatsapp
         from app.services.whatsapp import send_custom_whatsapp
+        formatted_patient_phone = format_ecuador_whatsapp(paciente.celular_whatsapp)
         background_tasks.add_task(
             send_custom_whatsapp,
-            to_phone=paciente.celular_whatsapp,
-            message=config.respuesta_automatica
+            to_phone=formatted_patient_phone,
+            message=auto_message
         )
 
     return nueva_cita
