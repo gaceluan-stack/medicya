@@ -497,15 +497,8 @@ async function contactProviderWithQuote(id, name, phone, quoteMessage, bookingSl
         }
         
         const cleanPhone = formatEcuadorWhatsApp(phone);
-        const autoMsg = data.respuesta_automatica || autoResponse || "";
         
-        let confirmText = `¡Cita y cotización registradas con éxito!\n`;
-        if (autoMsg) {
-            confirmText += `\n💬 Respuesta Automática del Profesional:\n"${autoMsg}"\n`;
-        }
-        confirmText += `\nTe redirigiremos a WhatsApp para enviar el mensaje al doctor.`;
-        
-        alert(confirmText);
+        // Redirección inmediata a WhatsApp sin alertas ni ventanas flotantes intermedias
         window.location.href = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(quoteMessage)}`;
         
     } catch(err) {

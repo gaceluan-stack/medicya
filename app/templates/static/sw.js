@@ -1,4 +1,4 @@
-const CACHE_NAME = 'medic-ya-cache-v22';
+const CACHE_NAME = 'medic-ya-cache-v23';
 const ASSETS = [
   '/',
   '/login',
