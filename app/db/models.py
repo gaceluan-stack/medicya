@@ -256,10 +256,14 @@ class ConfiguracionAgendaProveedor(Base):
     horarios_disponibilidad = Column(JSON, nullable=True) # e.g. {"lunes": ["08:00", "17:00"], "martes": ["08:00", "17:00"], ...}
     duracion_turno = Column(Integer, default=30) # en minutos
     respuesta_automatica = Column(String(1000), nullable=True)
+    whatsapp_session_status = Column(String(50), default="DISCONNECTED") # DISCONNECTED, PAIRING, CONNECTED
+    whatsapp_session_token = Column(String(255), nullable=True)
+    whatsapp_connected_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relaciones
     proveedor = relationship("ProveedorServicio", back_populates="configuracion_agenda")
+
 
 
 class CitaProveedor(Base):

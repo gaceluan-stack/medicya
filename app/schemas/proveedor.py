@@ -85,6 +85,7 @@ class ConfiguracionAgendaUpdate(BaseModel):
     duracion_turno: Optional[int] = Field(None, ge=10, le=120)
     respuesta_automatica: Optional[str] = Field(None, max_length=1000)
     google_calendar_link: Optional[str] = None
+    whatsapp_session_status: Optional[str] = None
 
 
 class ConfiguracionAgendaResponse(BaseModel):
@@ -93,6 +94,8 @@ class ConfiguracionAgendaResponse(BaseModel):
     horarios_disponibilidad: Optional[dict] = None
     duracion_turno: int
     respuesta_automatica: Optional[str] = None
+    whatsapp_session_status: Optional[str] = "DISCONNECTED"
+    whatsapp_connected_at: Optional[datetime] = None
     created_at: datetime
     google_calendar_link: Optional[str] = None
 

@@ -57,23 +57,28 @@ async def send_whatsapp_notification(
     
     return await send_custom_whatsapp(provider_phone, message)
 
-async def send_custom_whatsapp(to_phone: str, message: str) -> bool:
+async def send_custom_whatsapp(to_phone: str, message: str, session_token: str = None) -> bool:
     """
     Envía un mensaje de WhatsApp personalizado a un número de teléfono.
+    Si el médico tiene un session_token activo (QR vinculado), el mensaje
+    se transmite a través de la sesión propia del médico.
     """
     clean_phone = to_phone.replace("+", "").replace(" ", "").replace("-", "")
     payload = build_whatsapp_payload(settings.WHATSAPP_API_URL, clean_phone, message, settings.WHATSAPP_TOKEN)
+    if session_token:
+        payload["session_token"] = session_token
     
-    logger.info(f"Enviando WhatsApp a {clean_phone}: {message}")
+    logger.info(f"Enviando WhatsApp a {clean_phone} (Sesión Médico: {session_token or 'PLATAFORMA'}): {message}")
     
     try:
-        print(f"\n--- [WHATSAPP OUTGOING] TO: {clean_phone} ---\n{message}\n---------------------------------------\n")
+        sender_info = f" [SESION MEDICO: {session_token}]" if session_token else " [SESION CENTRAL]"
+        print(f"\n--- [WHATSAPP OUTGOING{sender_info}] TO: {clean_phone} ---\n{message}\n---------------------------------------\n")
     except UnicodeEncodeError:
         clean_message = message.encode('ascii', errors='replace').decode('ascii')
         print(f"\n--- [WHATSAPP OUTGOING] TO: {clean_phone} ---\n{clean_message}\n---------------------------------------\n")
         
     if "mock" in settings.WHATSAPP_API_URL.lower():
-        print(f"ℹ️ [WHATSAPP MOCK MODE] Mensaje registrado en logs del servidor. Para enviar mensajes reales a WhatsApp, configura las variables WHATSAPP_API_URL y WHATSAPP_TOKEN en el panel de Render.")
+        print(f"ℹ️ [WHATSAPP MOCK MODE] Mensaje registrado en logs del servidor. Sesión activa: {session_token or 'CENTRAL'}.")
         return True
         
     try:

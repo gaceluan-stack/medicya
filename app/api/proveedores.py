@@ -180,10 +180,12 @@ def contactar_proveedor(
         from app.services.phone_formatter import format_ecuador_whatsapp
         from app.services.whatsapp import send_custom_whatsapp
         formatted_patient_phone = format_ecuador_whatsapp(paciente.celular_whatsapp)
+        session_token = config.whatsapp_session_token if (config and config.whatsapp_session_status == "CONNECTED") else None
         background_tasks.add_task(
             send_custom_whatsapp,
             to_phone=formatted_patient_phone,
-            message=auto_message
+            message=auto_message,
+            session_token=session_token
         )
     
     return {
@@ -718,6 +720,8 @@ def get_agenda_config(
         horarios_disponibilidad=config.horarios_disponibilidad,
         duracion_turno=config.duracion_turno,
         respuesta_automatica=config.respuesta_automatica,
+        whatsapp_session_status=config.whatsapp_session_status or "DISCONNECTED",
+        whatsapp_connected_at=config.whatsapp_connected_at,
         created_at=config.created_at,
         google_calendar_link=proveedor.google_calendar_link
     )
@@ -763,7 +767,6 @@ def update_agenda_config(
         
     db.commit()
     db.refresh(config)
-    db.refresh(proveedor)
     
     return proveedor_schemas.ConfiguracionAgendaResponse(
         id=config.id,
@@ -771,9 +774,112 @@ def update_agenda_config(
         horarios_disponibilidad=config.horarios_disponibilidad,
         duracion_turno=config.duracion_turno,
         respuesta_automatica=config.respuesta_automatica,
+        whatsapp_session_status=config.whatsapp_session_status or "DISCONNECTED",
+        whatsapp_connected_at=config.whatsapp_connected_at,
         created_at=config.created_at,
         google_calendar_link=proveedor.google_calendar_link
     )
+
+
+@router.post("/me/whatsapp-qr-generate")
+def generate_provider_whatsapp_qr(
+    current_user: models.UsuarioSistema = Depends(deps.get_current_provider),
+    db: Session = Depends(get_db)
+):
+    """
+    Genera una sesión y un código QR persistente de WhatsApp para el médico actual.
+    """
+    proveedor = db.query(models.ProveedorServicio).filter(
+        models.ProveedorServicio.usuario_id == current_user.id
+    ).first()
+    if not proveedor:
+        raise HTTPException(status_code=404, detail="Proveedor no encontrado")
+        
+    config = db.query(models.ConfiguracionAgendaProveedor).filter(
+        models.ConfiguracionAgendaProveedor.proveedor_id == proveedor.id
+    ).first()
+    
+    if not config:
+        config = models.ConfiguracionAgendaProveedor(proveedor_id=proveedor.id)
+        db.add(config)
+        
+    session_token = f"med_wa_{proveedor.id}"
+    config.whatsapp_session_token = session_token
+    config.whatsapp_session_status = "PAIRING"
+    db.commit()
+    db.refresh(config)
+    
+    qr_payload = f"https://medic-ya.com/wa-pair?token={session_token}&phone={proveedor.celular_whatsapp if hasattr(proveedor, 'celular_whatsapp') else ''}"
+    
+    return {
+        "status": "PAIRING",
+        "session_token": session_token,
+        "qr_payload": qr_payload,
+        "phone": proveedor.celular_whatsapp if hasattr(proveedor, 'celular_whatsapp') else ""
+    }
+
+
+@router.post("/me/whatsapp-pair-confirm")
+def confirm_provider_whatsapp_pair(
+    current_user: models.UsuarioSistema = Depends(deps.get_current_provider),
+    db: Session = Depends(get_db)
+):
+    """
+    Confirma la vinculación permanente de WhatsApp tras el escaneo del código QR.
+    """
+    proveedor = db.query(models.ProveedorServicio).filter(
+        models.ProveedorServicio.usuario_id == current_user.id
+    ).first()
+    if not proveedor:
+        raise HTTPException(status_code=404, detail="Proveedor no encontrado")
+        
+    config = db.query(models.ConfiguracionAgendaProveedor).filter(
+        models.ConfiguracionAgendaProveedor.proveedor_id == proveedor.id
+    ).first()
+    
+    if not config:
+        raise HTTPException(status_code=400, detail="Configuración no inicializada")
+        
+    config.whatsapp_session_status = "CONNECTED"
+    config.whatsapp_connected_at = datetime.utcnow()
+    db.commit()
+    db.refresh(config)
+    
+    return {
+        "status": "CONNECTED",
+        "message": "WhatsApp vinculado de forma permanente exitosamente.",
+        "connected_at": config.whatsapp_connected_at
+    }
+
+
+@router.post("/me/whatsapp-disconnect")
+def disconnect_provider_whatsapp(
+    current_user: models.UsuarioSistema = Depends(deps.get_current_provider),
+    db: Session = Depends(get_db)
+):
+    """
+    Desvincula la sesión de WhatsApp del proveedor.
+    """
+    proveedor = db.query(models.ProveedorServicio).filter(
+        models.ProveedorServicio.usuario_id == current_user.id
+    ).first()
+    if not proveedor:
+        raise HTTPException(status_code=404, detail="Proveedor no encontrado")
+        
+    config = db.query(models.ConfiguracionAgendaProveedor).filter(
+        models.ConfiguracionAgendaProveedor.proveedor_id == proveedor.id
+    ).first()
+    
+    if config:
+        config.whatsapp_session_status = "DISCONNECTED"
+        config.whatsapp_session_token = None
+        config.whatsapp_connected_at = None
+        db.commit()
+        
+    return {
+        "status": "DISCONNECTED",
+        "message": "WhatsApp desvinculado exitosamente."
+    }
 
 
 @router.get("/me/citas", response_model=List[proveedor_schemas.CitaResponse])
@@ -1045,10 +1151,12 @@ def reservar_cita_public(
         from app.services.phone_formatter import format_ecuador_whatsapp
         from app.services.whatsapp import send_custom_whatsapp
         formatted_patient_phone = format_ecuador_whatsapp(paciente.celular_whatsapp)
+        session_token = config.whatsapp_session_token if (config and config.whatsapp_session_status == "CONNECTED") else None
         background_tasks.add_task(
             send_custom_whatsapp,
             to_phone=formatted_patient_phone,
-            message=auto_message
+            message=auto_message,
+            session_token=session_token
         )
 
     return nueva_cita

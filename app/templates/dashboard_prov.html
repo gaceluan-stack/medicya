@@ -398,6 +398,35 @@
                             </button>
                         </div>
 
+                        <!-- Vinculación Permanente de WhatsApp Médico -->
+                        <div class="bg-emerald-50/70 border border-emerald-200 rounded-2xl p-3 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <label class="text-emerald-900 font-bold text-[11px] flex items-center">
+                                    <i class="fa-brands fa-whatsapp text-emerald-600 text-sm mr-1.5"></i> Conexión WhatsApp Médico:
+                                </label>
+                                <span id="wa-session-badge" class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-gray-200 text-gray-600">
+                                    ⚪ No Vinculado
+                                </span>
+                            </div>
+                            
+                            <p class="text-[9px] text-gray-600 leading-tight">
+                                Vincula tu WhatsApp escaneando el código QR una sola vez para que los mensajes de respuesta automática salgan físicamente desde tu celular a los pacientes.
+                            </p>
+
+                            <div id="wa-session-connected-info" class="hidden text-[10px] text-emerald-800 font-semibold bg-white p-2.5 rounded-xl border border-emerald-150 space-y-1.5 shadow-sm">
+                                <p class="flex items-center"><i class="fa-solid fa-circle-check text-emerald-500 mr-1.5 text-xs"></i> Sesión activa permanente</p>
+                                <p class="text-[9px] text-gray-500 font-normal leading-tight">Los pacientes recibirán tus mensajes de bienvenida desde tu propio número de WhatsApp al agendar.</p>
+                                <button onclick="disconnectWhatsAppSession()" class="mt-1 w-full bg-red-50 hover:bg-red-100 text-red-600 font-bold py-1 rounded-lg text-[9px] border border-red-200 transition-colors">
+                                    Desvincular WhatsApp
+                                </button>
+                            </div>
+
+                            <button id="btn-generate-wa-qr" onclick="openWhatsAppQrModal()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-xl text-[10px] shadow transition-colors flex items-center justify-center space-x-1.5">
+                                <i class="fa-solid fa-qrcode"></i>
+                                <span>Vincular mi WhatsApp con Código QR</span>
+                            </button>
+                        </div>
+
                         <!-- Google Calendar Link -->
                         <div>
                             <label class="block text-gray-400 font-semibold mb-1">Enlace de Google Calendar:</label>
@@ -583,6 +612,41 @@
             <div id="camp-qrcode-container" class="bg-white p-3 rounded-xl shadow-lg border border-gray-100 animate-pulse"></div>
             <p id="camp-qr-caption" class="text-xs text-brand-600 font-bold font-mono tracking-widest mt-4 uppercase">DRCARLOS5</p>
             <p class="text-[10px] text-gray-400 text-center mt-2 leading-relaxed max-w-[200px]">Los pacientes pueden escanear este QR con sus móviles para agregar automáticamente el cupón de descuento a sus billeteras.</p>
+        </div>
+    </div>
+
+    <!-- Modal Código QR Vinculación WhatsApp Médico -->
+    <div id="whatsapp-qr-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glassmorphism w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl p-6 relative flex flex-col items-center font-sans space-y-4">
+            <button onclick="closeWhatsAppQrModal()" class="absolute top-5 right-5 text-gray-400 hover:text-gray-800 transition-colors">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            
+            <div class="text-center space-y-1">
+                <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-xl shadow-sm">
+                    <i class="fa-brands fa-whatsapp"></i>
+                </div>
+                <h3 class="text-sm font-bold text-gray-900">Vincular WhatsApp de Consultorio</h3>
+                <p class="text-[10px] text-gray-500">Mantén tu sesión conectada permanentemente</p>
+            </div>
+
+            <div id="wa-qr-canvas-container" class="bg-white p-3 rounded-2xl shadow-md border border-gray-150 flex items-center justify-center min-h-[190px]">
+                <!-- QR generado dinámicamente -->
+            </div>
+
+            <div class="bg-gray-50 border border-gray-200 rounded-2xl p-3 text-[10px] text-gray-600 space-y-1.5 w-full">
+                <p class="font-bold text-gray-800 flex items-center"><i class="fa-solid fa-list-check text-brand-500 mr-1.5"></i> Instrucciones (1 sola vez):</p>
+                <ol class="list-decimal list-inside space-y-1 text-[9.5px]">
+                    <li>Abre WhatsApp en tu teléfono personal.</li>
+                    <li>Ve a <strong>Menú</strong> o <strong>Configuración</strong>.</li>
+                    <li>Toca <strong>Dispositivos vinculados</strong> &rarr; <strong>Vincular un dispositivo</strong>.</li>
+                    <li>Escanea este código QR.</li>
+                </ol>
+            </div>
+
+            <button onclick="confirmWhatsAppPairing()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs shadow transition-colors">
+                ¡Ya lo escaneé! Confirmar Vinculación
+            </button>
         </div>
     </div>
 
@@ -1155,6 +1219,28 @@
                     document.getElementById('agenda-google-calendar').value = calLink;
                     renderAvailabilityDays(agendaConfig.horarios_disponibilidad || {});
                     
+                    if (agendaConfig.whatsapp_session_status === "CONNECTED") {
+                        const badgeEl = document.getElementById('wa-session-badge');
+                        if (badgeEl) {
+                            badgeEl.className = "px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-300";
+                            badgeEl.textContent = "🟢 Conectado Permanente";
+                        }
+                        const connInfo = document.getElementById('wa-session-connected-info');
+                        if (connInfo) connInfo.classList.remove('hidden');
+                        const qrBtn = document.getElementById('btn-generate-wa-qr');
+                        if (qrBtn) qrBtn.classList.add('hidden');
+                    } else {
+                        const badgeEl = document.getElementById('wa-session-badge');
+                        if (badgeEl) {
+                            badgeEl.className = "px-2 py-0.5 rounded-full text-[9px] font-bold bg-gray-200 text-gray-600";
+                            badgeEl.textContent = "⚪ No Vinculado";
+                        }
+                        const connInfo = document.getElementById('wa-session-connected-info');
+                        if (connInfo) connInfo.classList.add('hidden');
+                        const qrBtn = document.getElementById('btn-generate-wa-qr');
+                        if (qrBtn) qrBtn.classList.remove('hidden');
+                    }
+                    
                     const previewBox = document.getElementById('calendar-preview-box');
                     const previewIframe = document.getElementById('calendar-preview-iframe');
                     if (calLink) {
@@ -1523,6 +1609,63 @@
             } else if (tabName === 'publicidad') {
                 document.getElementById('tab-content-publicidad').classList.remove('hidden');
                 pubBtn.className = "pb-3 border-b-2 border-brand-500 text-brand-650 flex items-center space-x-2 transition-all font-bold cursor-pointer";
+            }
+        }
+
+        // --- FUNCIONES DE VINCULACIÓN PERMANENTE DE WHATSAPP ---
+        async function openWhatsAppQrModal() {
+            try {
+                const res = await fetch('/api/proveedores/me/whatsapp-qr-generate', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                
+                const container = document.getElementById('wa-qr-canvas-container');
+                container.innerHTML = `
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(data.qr_payload)}" class="w-44 h-44 rounded-lg shadow-sm" alt="Código QR WhatsApp" />
+                `;
+                document.getElementById('whatsapp-qr-modal').classList.remove('hidden');
+            } catch(err) {
+                alert("Error al generar código QR: " + err.message);
+            }
+        }
+
+        function closeWhatsAppQrModal() {
+            document.getElementById('whatsapp-qr-modal').classList.add('hidden');
+        }
+
+        async function confirmWhatsAppPairing() {
+            try {
+                const res = await fetch('/api/proveedores/me/whatsapp-pair-confirm', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    alert("¡Excelente! Tu WhatsApp ha sido vinculado de forma permanente.");
+                    closeWhatsAppQrModal();
+                    loadAgenda();
+                } else {
+                    alert("No pudimos verificar la vinculación. Inténtalo nuevamente.");
+                }
+            } catch(err) {
+                alert("Error al confirmar vinculación: " + err.message);
+            }
+        }
+
+        async function disconnectWhatsAppSession() {
+            if (!confirm("¿Estás seguro de que deseas desvincular tu sesión de WhatsApp? Dejarás de enviar respuestas automáticas desde tu propio número.")) return;
+            try {
+                const res = await fetch('/api/proveedores/me/whatsapp-disconnect', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    alert("Tu sesión de WhatsApp ha sido desvinculada.");
+                    loadAgenda();
+                }
+            } catch(err) {
+                alert("Error al desvincular: " + err.message);
             }
         }
     </script>
