@@ -2,6 +2,7 @@
 
 let map;
 let markerCluster;
+let userMarker = null;
 let currentCategory = null;
 let userCoords = [-0.180653, -78.467834]; // Quito default
 let loadedProviders = {}; // Guardar los objetos de proveedores para el cotizador
@@ -95,10 +96,10 @@ async function initMap() {
         popupAnchor: [0, -35]
     });
     
-    L.marker(userCoords, { icon: userIcon })
+    userMarker = L.marker(userCoords, { icon: userIcon })
         .addTo(map)
-        .bindPopup("<strong class='text-brand-700'>Tu Ubicación Actual</strong>")
-        .openPopup();
+        .bindPopup("<strong class='text-brand-700'>Tu Ubicación Actual</strong>");
+    userMarker.openPopup();
         
     // 5. Inicializar Marker Cluster Group
     markerCluster = L.markerClusterGroup({
@@ -983,4 +984,43 @@ function formatGoogleCalendarUrl(link) {
         } catch(e) {}
     }
     return url;
+}
+
+// Recentra el mapa suavemente en la ubicación GPS/GeoIP del usuario (Estilo Google Maps)
+async function recenterMapOnUser() {
+    const btnIcon = document.querySelector('#recenter-location-btn i');
+    if (btnIcon) {
+        btnIcon.classList.add('animate-spin');
+    }
+    
+    if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                userCoords = [position.coords.latitude, position.coords.longitude];
+                if (userMarker) {
+                    userMarker.setLatLng(userCoords);
+                }
+                if (map) {
+                    map.flyTo(userCoords, 16, { animate: true, duration: 1.2 });
+                    if (userMarker) userMarker.openPopup();
+                }
+                if (btnIcon) btnIcon.classList.remove('animate-spin');
+            },
+            (error) => {
+                console.warn("Recentrando en la ubicación previa del usuario:", error);
+                if (map) {
+                    map.flyTo(userCoords, 15, { animate: true, duration: 1 });
+                    if (userMarker) userMarker.openPopup();
+                }
+                if (btnIcon) btnIcon.classList.remove('animate-spin');
+            },
+            { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+        );
+    } else {
+        if (map) {
+            map.flyTo(userCoords, 15, { animate: true, duration: 1 });
+            if (userMarker) userMarker.openPopup();
+        }
+        if (btnIcon) btnIcon.classList.remove('animate-spin');
+    }
 }
